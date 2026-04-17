@@ -28,7 +28,7 @@ const GameState = {
   _seedDefaults() {
     this.activeSquad      = [];
     this.campaignProgress = { regionCleared: 0, stageCleared: null };
-    this.unlockedSystems  = new Set();
+    this.unlockedSystems  = new Set(['BASIC_SUMMON']);
     this.lastSaveTime     = Date.now();
     // Starting currencies so new players can test Basic Summon immediately
     CurrencyManager.add(CURRENCY.CRYSTALS, 500);
@@ -76,6 +76,16 @@ const GameState = {
     if (data.heroes)     HeroManager.fromJSON(data.heroes);
     if (data.gear)       GearManager.fromJSON(data.gear);
     if (data.summon)     SummonManager.fromJSON(data.summon);
+    // Migration: grant starter crystals and BASIC_SUMMON to existing saves that lack them
+    if (!this.unlockedSystems.has('BASIC_SUMMON')) {
+      this.unlockedSystems.add('BASIC_SUMMON');
+    }
+    if (CurrencyManager.get(CURRENCY.CRYSTALS) === 0) {
+      CurrencyManager.add(CURRENCY.CRYSTALS, 500);
+    }
+    if (CurrencyManager.get(CURRENCY.PREMIUM_CRYSTALS) === 0) {
+      CurrencyManager.add(CURRENCY.PREMIUM_CRYSTALS, 300);
+    }
   }
 };
 

@@ -267,6 +267,7 @@ export default class CampaignScene extends Phaser.Scene {
     if (this._stageIdx(stage.id) > this._lastClearedIdx()) {
       GameState.campaignProgress.stageCleared = stage.id;
       stage.milestoneRewards.forEach(m => this._applyMilestone(m));
+      if (stage.id === '1-5') GameState.addUnlockedSystem('BASIC_SUMMON');
     }
     GameState.save();
     this._showStageSelect();
