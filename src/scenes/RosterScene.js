@@ -1,6 +1,7 @@
 import GameState from '../systems/GameState.js';
 import HeroManager from '../systems/HeroManager.js';
 import CurrencyManager from '../systems/CurrencyManager.js';
+import AcademyGroundsManager from '../systems/AcademyGroundsManager.js';
 import { RARITY_ORDER, RARITY_CONFIG, CURRENCY } from '../data/constants.js';
 
 const CLASS_COLORS = {
@@ -57,6 +58,7 @@ export default class RosterScene extends Phaser.Scene {
     const W = 480, stats = hero.computeStats();
     const maxStars = RARITY_CONFIG[hero.rarity].maxStars;
     const stars    = '★'.repeat(hero.stars) + '☆'.repeat(maxStars - hero.stars);
+    const isActive = GameState.activeSquad.includes(hero.id);
 
     const bg = this.add.rectangle(W / 2, y, 446, 80,
       CLASS_COLORS[hero.heroClass] || 0x333344)
@@ -74,7 +76,7 @@ export default class RosterScene extends Phaser.Scene {
     c.add(this.add.text(30, y - 2,
       `${hero.heroClass}  ${AFF_ICON[hero.affinity] || hero.affinity}`,
       { font: '12px monospace', fill: '#dddddd' }).setOrigin(0, 0.5));
-    c.add(this.add.text(30, y + 20, stars.slice(0, 9),  // cap display width
+    c.add(this.add.text(30, y + 20, stars.slice(0, 9),
       { font: '12px monospace', fill: '#ffdd44' }).setOrigin(0, 0.5));
 
     // Right column
@@ -82,9 +84,23 @@ export default class RosterScene extends Phaser.Scene {
       { font: '15px monospace', fill: '#ffffff' }).setOrigin(1, 0.5));
     c.add(this.add.text(W - 30, y - 2, hero.rarity,
       { font: '11px monospace', fill: RARITY_STR[hero.rarity] }).setOrigin(1, 0.5));
-    c.add(this.add.text(W - 30, y + 20,
-      `HP:${stats.hp} ATK:${stats.damage}`,
-      { font: '10px monospace', fill: '#aaaaaa' }).setOrigin(1, 0.5));
+
+    if (isActive) {
+      c.add(this.add.text(W - 30, y + 20,
+        `HP:${stats.hp} ATK:${stats.damage}`,
+        { font: '10px monospace', fill: '#aaaaaa' }).setOrigin(1, 0.5));
+    } else {
+      // Benched hero: training label + XP progress bar
+      c.add(this.add.text(W - 30, y + 20, 'TRAINING',
+        { font: '10px monospace', fill: '#33ccaa' }).setOrigin(1, 0.5));
+      const xpPct  = Math.min(1, hero.xp / hero.xpThreshold());
+      const barL   = W / 2 - 218;
+      const barW   = 436;
+      c.add(this.add.rectangle(barL, y + 35, barW, 5, 0x0d2218).setOrigin(0, 0.5));
+      if (xpPct > 0) {
+        c.add(this.add.rectangle(barL, y + 35, Math.max(2, barW * xpPct), 5, 0x33ccaa).setOrigin(0, 0.5));
+      }
+    }
   }
 
   // ─── DETAIL ──────────────────────────────────────────────────────────────────
@@ -146,6 +162,20 @@ export default class RosterScene extends Phaser.Scene {
     c.add(this.add.text(W - 30, 396,
       `Stars ${hero.stars}★ of ${maxStars}★ max`,
       { font: '11px monospace', fill: '#666688' }).setOrigin(1, 0.5));
+
+    // Training info for benched heroes
+    const isActive = GameState.activeSquad.includes(hero.id);
+    if (!isActive) {
+      const xpRate  = AcademyGroundsManager.getXpRate(GameState.campaignProgress).toFixed(1);
+      const capLvl  = AcademyGroundsManager.getCapLevel(GameState.activeSquad);
+      const capText = capLvl > 0 ? `cap LV${capLvl}` : 'no squad';
+      c.add(this.add.text(30, 407,
+        `TRAINING  +${xpRate} XP/sec`,
+        { font: '9px monospace', fill: '#33ccaa' }).setOrigin(0, 0.5));
+      c.add(this.add.text(W - 30, 407,
+        capText,
+        { font: '9px monospace', fill: '#226644' }).setOrigin(1, 0.5));
+    }
 
     // Level up button
     this._addLevelUpBtn(hero, c, W);

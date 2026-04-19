@@ -11,6 +11,7 @@ import AffinityTowerManager from './AffinityTowerManager.js';
 import DailyCodexManager from './DailyCodexManager.js';
 import GuildManager from './GuildManager.js';
 import GuildShopManager from './GuildShopManager.js';
+import AcademyGroundsManager from './AcademyGroundsManager.js';
 import HERO_DEFINITIONS from '../data/heroDefinitions.js';
 import { CURRENCY } from '../data/constants.js';
 
@@ -26,7 +27,7 @@ const GameState = {
     const save = SaveManager.load();
     if (save) {
       this.fromJSON(save);
-      IdleManager.processOffline(save.lastSaveTime, this.campaignProgress);
+      IdleManager.processOffline(save.lastSaveTime, this.campaignProgress, this.activeSquad);
     } else {
       this._seedDefaults();
     }
@@ -77,6 +78,7 @@ const GameState = {
       dailyCodex:       DailyCodexManager.toJSON(),
       guild:            GuildManager.toJSON(),
       guildShop:        GuildShopManager.toJSON(),
+      academyGrounds:   AcademyGroundsManager.toJSON(),
       lastSaveTime:     Date.now()
     };
   },
@@ -95,8 +97,9 @@ const GameState = {
     if (data.arena)         ArenaManager.fromJSON(data.arena);
     if (data.affinityTower) AffinityTowerManager.fromJSON(data.affinityTower);
     if (data.dailyCodex)    DailyCodexManager.fromJSON(data.dailyCodex);
-    if (data.guild)         GuildManager.fromJSON(data.guild);
-    if (data.guildShop)     GuildShopManager.fromJSON(data.guildShop);
+    if (data.guild)          GuildManager.fromJSON(data.guild);
+    if (data.guildShop)      GuildShopManager.fromJSON(data.guildShop);
+    if (data.academyGrounds) AcademyGroundsManager.fromJSON(data.academyGrounds);
     // Migration: grant starter crystals and BASIC_SUMMON to existing saves that lack them
     if (!this.unlockedSystems.has('BASIC_SUMMON')) {
       this.unlockedSystems.add('BASIC_SUMMON');
