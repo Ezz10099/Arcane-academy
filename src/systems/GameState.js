@@ -9,6 +9,8 @@ import WorldBossManager from './WorldBossManager.js';
 import ArenaManager from './ArenaManager.js';
 import AffinityTowerManager from './AffinityTowerManager.js';
 import DailyCodexManager from './DailyCodexManager.js';
+import GuildManager from './GuildManager.js';
+import GuildShopManager from './GuildShopManager.js';
 import HERO_DEFINITIONS from '../data/heroDefinitions.js';
 import { CURRENCY } from '../data/constants.js';
 
@@ -73,6 +75,8 @@ const GameState = {
       arena:            ArenaManager.toJSON(),
       affinityTower:    AffinityTowerManager.toJSON(),
       dailyCodex:       DailyCodexManager.toJSON(),
+      guild:            GuildManager.toJSON(),
+      guildShop:        GuildShopManager.toJSON(),
       lastSaveTime:     Date.now()
     };
   },
@@ -91,6 +95,8 @@ const GameState = {
     if (data.arena)         ArenaManager.fromJSON(data.arena);
     if (data.affinityTower) AffinityTowerManager.fromJSON(data.affinityTower);
     if (data.dailyCodex)    DailyCodexManager.fromJSON(data.dailyCodex);
+    if (data.guild)         GuildManager.fromJSON(data.guild);
+    if (data.guildShop)     GuildShopManager.fromJSON(data.guildShop);
     // Migration: grant starter crystals and BASIC_SUMMON to existing saves that lack them
     if (!this.unlockedSystems.has('BASIC_SUMMON')) {
       this.unlockedSystems.add('BASIC_SUMMON');
