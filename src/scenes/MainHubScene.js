@@ -66,7 +66,7 @@ export default class MainHubScene extends Phaser.Scene {
   }
 
   _idleTick() {
-    IdleManager.tick(1000, GameState.campaignProgress);
+    IdleManager.tick(1000, GameState.campaignProgress, GameState.activeSquad);
   }
 
   _refreshUI() {
