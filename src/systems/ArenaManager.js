@@ -1,5 +1,6 @@
 import HERO_DEFINITIONS from '../data/heroDefinitions.js';
 import { CLASS_DEFAULTS } from '../data/constants.js';
+import AchievementManager from './AchievementManager.js';
 
 export const RANK_TIERS = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'];
 
@@ -131,6 +132,7 @@ const ArenaManager = {
     const prevRank = this.rank;
     if (playerWon) {
       this.rank = Math.min(RANK_TIERS.length - 1, this.rank + 1);
+      AchievementManager.checkArenaWin();
     } else {
       this.rank = Math.max(0, this.rank - 1);
     }

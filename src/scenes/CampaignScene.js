@@ -2,6 +2,7 @@ import GameState from '../systems/GameState.js';
 import HeroManager, { HeroInstance } from '../systems/HeroManager.js';
 import CurrencyManager from '../systems/CurrencyManager.js';
 import BattleEngine from '../systems/BattleEngine.js';
+import AchievementManager from '../systems/AchievementManager.js';
 import STAGE_DEFINITIONS from '../data/stageDefinitions.js';
 import HERO_DEFINITIONS from '../data/heroDefinitions.js';
 import { CLASS_DEFAULTS, CURRENCY } from '../data/constants.js';
@@ -268,9 +269,11 @@ export default class CampaignScene extends Phaser.Scene {
       GameState.campaignProgress.stageCleared = stage.id;
       stage.milestoneRewards.forEach(m => this._applyMilestone(m));
       if (stage.id === '1-5') GameState.addUnlockedSystem('BASIC_SUMMON');
+      if (stage.region) AchievementManager.checkRegionReached(stage.region);
     }
     GameState.save();
     this._showStageSelect();
+    AchievementManager.showPopups(this);
   }
 
   _applyMilestone(m) {

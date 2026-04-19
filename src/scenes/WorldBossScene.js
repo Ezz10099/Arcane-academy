@@ -3,6 +3,7 @@ import HeroManager      from '../systems/HeroManager.js';
 import CurrencyManager  from '../systems/CurrencyManager.js';
 import BattleEngine     from '../systems/BattleEngine.js';
 import WorldBossManager, { TIER_CONFIG } from '../systems/WorldBossManager.js';
+import AchievementManager from '../systems/AchievementManager.js';
 import DailyCodexManager from '../systems/DailyCodexManager.js';
 import { CLASS_DEFAULTS, CURRENCY } from '../data/constants.js';
 
@@ -349,6 +350,8 @@ export default class WorldBossScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, colY + 50,
       attLeft + ' attempt' + (attLeft !== 1 ? 's' : '') + ' remaining today',
       { font: '13px monospace', fill: '#888888' }).setOrigin(0.5));
+
+    AchievementManager.showPopups(this);
   }
 
   _collectAndReturn(battleResult) {

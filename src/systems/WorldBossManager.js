@@ -1,3 +1,5 @@
+import AchievementManager from './AchievementManager.js';
+
 const TIER_CONFIG = {
   EASY: {
     label: 'Easy', colorHex: 0x44cc44, colorStr: '#44cc44',
@@ -110,6 +112,7 @@ const WorldBossManager = {
 
     const bossDefeated = state.currentHp <= 0;
     if (bossDefeated) {
+      AchievementManager.checkWorldBossDefeated(tierKey);
       state.currentHp = maxHp;
       state.milestonesCleared = [];
     }
