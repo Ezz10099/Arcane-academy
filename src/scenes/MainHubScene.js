@@ -25,15 +25,16 @@ export default class MainHubScene extends Phaser.Scene {
 
     // Nav buttons
     const navItems = [
-      { label: '⚔  CAMPAIGN',          y: 210, scene: 'Campaign'     },
-      { label: '\u221e  ENDLESS TOWER', y: 280, scene: 'EndlessTower' },
-      { label: '\u2694  WORLD BOSS',    y: 350, scene: 'WorldBoss'    },
-      { label: '\u2605  ARENA',         y: 420, scene: 'Arena'        },
-      { label: '✦  SUMMON',            y: 490, scene: 'Summon'       },
-      { label: '⚑  ROSTER',            y: 560, scene: 'Roster'       },
-      { label: '\u25c6  AFFINITY TOWERS', y: 630, scene: 'AffinityTowerSelection' },
-      { label: '\u2295  DAILY CODEX',   y: 700, scene: 'DailyCodex'             },
-      { label: '⚙  SETTINGS',          y: 770, scene: 'Settings'               }
+      { label: '\u2694  CAMPAIGN',         y: 206, scene: 'Campaign'              },
+      { label: '\u221e  ENDLESS TOWER',    y: 272, scene: 'EndlessTower'          },
+      { label: '\u2605  WORLD BOSS',       y: 338, scene: 'WorldBoss'             },
+      { label: '\u2663  ARENA',            y: 404, scene: 'Arena'                 },
+      { label: '\u2734  SUMMON',           y: 470, scene: 'Summon'                },
+      { label: '\u2691  ROSTER',           y: 536, scene: 'Roster'                },
+      { label: '\u25c6  AFFINITY TOWERS',  y: 602, scene: 'AffinityTowerSelection'},
+      { label: '\u2295  DAILY CODEX',      y: 668, scene: 'DailyCodex'            },
+      { label: '\u26e8  GUILD',            y: 734, scene: 'Guild'                 },
+      { label: '\u2699  SETTINGS',         y: 800, scene: 'Settings'              },
     ];
     for (const item of navItems) this._makeNavButton(item, W);
 
