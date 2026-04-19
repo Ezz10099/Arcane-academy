@@ -5,6 +5,7 @@ import BattleEngine    from '../systems/BattleEngine.js';
 import GuildManager, {
   BOSS_TIERS, LEVEL_PERKS, GUILD_CREATION_COST, ATTACKS_PER_DAY
 } from '../systems/GuildManager.js';
+import AchievementManager from '../systems/AchievementManager.js';
 import { CLASS_DEFAULTS, CURRENCY } from '../data/constants.js';
 
 const CLASS_COLORS = {
@@ -411,5 +412,6 @@ export default class GuildScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, colY, 'COLLECT', { font: '22px monospace', fill: '#cc88ff' }).setOrigin(0.5));
 
     GameState.save();
+    AchievementManager.showPopups(this);
   }
 }

@@ -1,6 +1,7 @@
 import GameState from '../systems/GameState.js';
 import CurrencyManager from '../systems/CurrencyManager.js';
 import IdleManager from '../systems/IdleManager.js';
+import AchievementManager from '../systems/AchievementManager.js';
 
 const BTN_COLOR      = 0x1a1a3a;
 const BTN_COLOR_DOWN = 0x0d0d1f;
@@ -23,17 +24,18 @@ export default class MainHubScene extends Phaser.Scene {
     this._premText    = this.add.text(20, 134, 'Prem.Crystals: 0',{ font: '13px monospace', fill: '#cc88ff' });
     this._rateText    = this.add.text(20, 154, '+0/s',            { font: '13px monospace', fill: '#888888' });
 
-    // Nav buttons
+    // Nav buttons (11 items, 60px spacing from y=200)
     const navItems = [
-      { label: '\u2694  CAMPAIGN',         y: 206, scene: 'Campaign'              },
-      { label: '\u221e  ENDLESS TOWER',    y: 272, scene: 'EndlessTower'          },
-      { label: '\u2605  WORLD BOSS',       y: 338, scene: 'WorldBoss'             },
-      { label: '\u2663  ARENA',            y: 404, scene: 'Arena'                 },
-      { label: '\u2734  SUMMON',           y: 470, scene: 'Summon'                },
-      { label: '\u2691  ROSTER',           y: 536, scene: 'Roster'                },
-      { label: '\u25c6  AFFINITY TOWERS',  y: 602, scene: 'AffinityTowerSelection'},
-      { label: '\u2295  DAILY CODEX',      y: 668, scene: 'DailyCodex'            },
-      { label: '\u26e8  GUILD',            y: 734, scene: 'Guild'                 },
+      { label: '\u2694  CAMPAIGN',         y: 200, scene: 'Campaign'              },
+      { label: '\u221e  ENDLESS TOWER',    y: 260, scene: 'EndlessTower'          },
+      { label: '\u2605  WORLD BOSS',       y: 320, scene: 'WorldBoss'             },
+      { label: '\u2663  ARENA',            y: 380, scene: 'Arena'                 },
+      { label: '\u2734  SUMMON',           y: 440, scene: 'Summon'                },
+      { label: '\u2691  ROSTER',           y: 500, scene: 'Roster'                },
+      { label: '\u25c6  AFFINITY TOWERS',  y: 560, scene: 'AffinityTowerSelection'},
+      { label: '\u2295  DAILY CODEX',      y: 620, scene: 'DailyCodex'            },
+      { label: '\u26e8  GUILD',            y: 680, scene: 'Guild'                 },
+      { label: '\u2318  ACHIEVEMENTS',     y: 740, scene: 'Achievement'           },
       { label: '\u2699  SETTINGS',         y: 800, scene: 'Settings'              },
     ];
     for (const item of navItems) this._makeNavButton(item, W);
@@ -43,6 +45,9 @@ export default class MainHubScene extends Phaser.Scene {
     this.time.addEvent({ delay: 1000,  loop: true, callback: this._idleTick,   callbackScope: this });
     this.time.addEvent({ delay: 30000, loop: true, callback: () => GameState.save() });
     this._refreshUI();
+
+    // Show any achievement popups queued from other scenes
+    AchievementManager.showPopups(this);
   }
 
   _makeNavButton({ label, y, scene }, W) {

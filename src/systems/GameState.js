@@ -12,6 +12,7 @@ import DailyCodexManager from './DailyCodexManager.js';
 import GuildManager from './GuildManager.js';
 import GuildShopManager from './GuildShopManager.js';
 import AcademyGroundsManager from './AcademyGroundsManager.js';
+import AchievementManager from './AchievementManager.js';
 import HERO_DEFINITIONS from '../data/heroDefinitions.js';
 import { CURRENCY } from '../data/constants.js';
 
@@ -79,6 +80,7 @@ const GameState = {
       guild:            GuildManager.toJSON(),
       guildShop:        GuildShopManager.toJSON(),
       academyGrounds:   AcademyGroundsManager.toJSON(),
+      achievements:     AchievementManager.toJSON(),
       lastSaveTime:     Date.now()
     };
   },
@@ -88,6 +90,8 @@ const GameState = {
     this.campaignProgress = data.campaignProgress || { regionCleared: 0, stageCleared: null };
     this.unlockedSystems  = new Set(data.unlockedSystems || []);
     this.lastSaveTime     = data.lastSaveTime     || Date.now();
+    // Achievements loaded first so hero/gear load checks don't re-trigger completed ones
+    if (data.achievements) AchievementManager.fromJSON(data.achievements);
     if (data.currencies)   CurrencyManager.fromJSON(data.currencies);
     if (data.heroes)       HeroManager.fromJSON(data.heroes);
     if (data.gear)         GearManager.fromJSON(data.gear);
@@ -100,6 +104,7 @@ const GameState = {
     if (data.guild)          GuildManager.fromJSON(data.guild);
     if (data.guildShop)      GuildShopManager.fromJSON(data.guildShop);
     if (data.academyGrounds) AcademyGroundsManager.fromJSON(data.academyGrounds);
+    if (!data.achievements)  AchievementManager.fromJSON(null); // ensure clean state on old saves
     // Migration: grant starter crystals and BASIC_SUMMON to existing saves that lack them
     if (!this.unlockedSystems.has('BASIC_SUMMON')) {
       this.unlockedSystems.add('BASIC_SUMMON');

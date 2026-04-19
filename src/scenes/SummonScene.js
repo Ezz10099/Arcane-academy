@@ -1,6 +1,7 @@
 import GameState from '../systems/GameState.js';
 import SummonManager from '../systems/SummonManager.js';
 import CurrencyManager from '../systems/CurrencyManager.js';
+import AchievementManager from '../systems/AchievementManager.js';
 import DailyCodexManager from '../systems/DailyCodexManager.js';
 import HERO_DEFINITIONS from '../data/heroDefinitions.js';
 import { CURRENCY } from '../data/constants.js';
@@ -266,6 +267,7 @@ export default class SummonScene extends Phaser.Scene {
     GameState.save();
     this._lastResults = results;
     this._build();
+    AchievementManager.showPopups(this);
   }
 
   // ─── WISHLIST OVERLAY ─────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import CurrencyManager from './CurrencyManager.js';
 import { CURRENCY } from '../data/constants.js';
+import AchievementManager from './AchievementManager.js';
 
 export const GUILD_CREATION_COST = 5000;
 export const MAX_MEMBERS = 30;
@@ -93,12 +94,14 @@ const GuildManager = {
     if (!CurrencyManager.spend(CURRENCY.GOLD, GUILD_CREATION_COST))
       return { ok: false, reason: 'Need ' + GUILD_CREATION_COST.toLocaleString() + ' Gold' };
     this.guild = { name: trimmed, level: 1, xp: 0, memberCount: 1, isOwner: true };
+    AchievementManager.checkGuildJoined();
     return { ok: true };
   },
 
   joinGuild(guildName, level, memberCount) {
     if (this.guild) return { ok: false, reason: 'Already in a guild' };
     this.guild = { name: guildName, level: level || 1, xp: 0, memberCount: (memberCount || 5) + 1, isOwner: false };
+    AchievementManager.checkGuildJoined();
     return { ok: true };
   },
 
@@ -120,6 +123,7 @@ const GuildManager = {
       if (!needed || this.guild.xp < needed) break;
       this.guild.xp -= needed;
       this.guild.level++;
+      AchievementManager.checkGuildLevel(this.guild.level);
     }
   },
 
@@ -187,6 +191,7 @@ const GuildManager = {
     this._addXP(xpGained);
     CurrencyManager.add(CURRENCY.GUILD_COINS, coinsEarned);
 
+    AchievementManager.checkGuildBossAttack(rawDamage);
     this.bossState.lastResult = { damage, bossDefeated, tierAdvanced, xpGained, coinsEarned };
     return this.bossState.lastResult;
   },

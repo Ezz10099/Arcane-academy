@@ -1,6 +1,7 @@
 import { GEAR_SLOT, RARITY, RARITY_ORDER, CURRENCY } from '../data/constants.js';
 import CurrencyManager from './CurrencyManager.js';
 import HeroManager from './HeroManager.js';
+import AchievementManager from './AchievementManager.js';
 
 const RARITY_MULT = {
   COMMON: 1, UNCOMMON: 1.5, RARE: 2.5, EPIC: 4, LEGENDARY: 6, MYTHIC: 10, ASCENDED: 15
@@ -65,7 +66,10 @@ class GearInstance {
 const GearManager = {
   _inventory: new Map(),
 
-  addGear(instance)  { this._inventory.set(instance.id, instance); },
+  addGear(instance)  {
+    this._inventory.set(instance.id, instance);
+    AchievementManager.checkGearObtained(instance.rarity);
+  },
   getGear(id)        { return this._inventory.get(id) || null; },
   getAllGear()        { return [...this._inventory.values()]; },
 
@@ -77,6 +81,7 @@ const GearManager = {
     if (existingGearId) this.unequip(existingGearId);
     gear.equippedTo = heroId;
     hero.gear[slot] = gearId;
+    AchievementManager.checkGearEquipped(hero);
     return true;
   },
 

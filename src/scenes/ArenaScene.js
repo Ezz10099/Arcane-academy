@@ -3,6 +3,7 @@ import HeroManager from '../systems/HeroManager.js';
 import CurrencyManager from '../systems/CurrencyManager.js';
 import BattleEngine from '../systems/BattleEngine.js';
 import ArenaManager, { RANK_CONFIG, MAX_ATTEMPTS } from '../systems/ArenaManager.js';
+import AchievementManager from '../systems/AchievementManager.js';
 import DailyCodexManager from '../systems/DailyCodexManager.js';
 import { CLASS_DEFAULTS, CURRENCY } from '../data/constants.js';
 
@@ -309,5 +310,7 @@ export default class ArenaScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, 430, 'BACK TO ARENA', {
       font: '20px monospace', fill: isWin ? '#ffaa44' : '#aa66ff',
     }).setOrigin(0.5));
+
+    AchievementManager.showPopups(this);
   }
 }
