@@ -4,6 +4,16 @@ import HeroManager, { HeroInstance } from './HeroManager.js';
 import GearManager from './GearManager.js';
 import SummonManager from './SummonManager.js';
 import IdleManager from './IdleManager.js';
+import EndlessTowerManager from './EndlessTowerManager.js';
+import WorldBossManager from './WorldBossManager.js';
+import ArenaManager from './ArenaManager.js';
+import AffinityTowerManager from './AffinityTowerManager.js';
+import DailyCodexManager from './DailyCodexManager.js';
+import GuildManager from './GuildManager.js';
+import GuildShopManager from './GuildShopManager.js';
+import AcademyGroundsManager from './AcademyGroundsManager.js';
+import AchievementManager from './AchievementManager.js';
+import ElderTreeManager from './ElderTreeManager.js';
 import HERO_DEFINITIONS from '../data/heroDefinitions.js';
 import { CURRENCY } from '../data/constants.js';
 
@@ -19,7 +29,7 @@ const GameState = {
     const save = SaveManager.load();
     if (save) {
       this.fromJSON(save);
-      IdleManager.processOffline(save.lastSaveTime, this.campaignProgress);
+      IdleManager.processOffline(save.lastSaveTime, this.campaignProgress, this.activeSquad);
     } else {
       this._seedDefaults();
     }
@@ -63,6 +73,16 @@ const GameState = {
       heroes:           HeroManager.toJSON(),
       gear:             GearManager.toJSON(),
       summon:           SummonManager.toJSON(),
+      endlessTower:     EndlessTowerManager.toJSON(),
+      worldBoss:        WorldBossManager.toJSON(),
+      arena:            ArenaManager.toJSON(),
+      affinityTower:    AffinityTowerManager.toJSON(),
+      dailyCodex:       DailyCodexManager.toJSON(),
+      guild:            GuildManager.toJSON(),
+      guildShop:        GuildShopManager.toJSON(),
+      academyGrounds:   AcademyGroundsManager.toJSON(),
+      achievements:     AchievementManager.toJSON(),
+      elderTree:        ElderTreeManager.toJSON(),
       lastSaveTime:     Date.now()
     };
   },
@@ -72,10 +92,22 @@ const GameState = {
     this.campaignProgress = data.campaignProgress || { regionCleared: 0, stageCleared: null };
     this.unlockedSystems  = new Set(data.unlockedSystems || []);
     this.lastSaveTime     = data.lastSaveTime     || Date.now();
-    if (data.currencies) CurrencyManager.fromJSON(data.currencies);
-    if (data.heroes)     HeroManager.fromJSON(data.heroes);
-    if (data.gear)       GearManager.fromJSON(data.gear);
-    if (data.summon)     SummonManager.fromJSON(data.summon);
+    // Achievements loaded first so hero/gear load checks don't re-trigger completed ones
+    if (data.achievements) AchievementManager.fromJSON(data.achievements);
+    if (data.currencies)   CurrencyManager.fromJSON(data.currencies);
+    if (data.heroes)       HeroManager.fromJSON(data.heroes);
+    if (data.gear)         GearManager.fromJSON(data.gear);
+    if (data.summon)       SummonManager.fromJSON(data.summon);
+    if (data.endlessTower) EndlessTowerManager.fromJSON(data.endlessTower);
+    if (data.worldBoss)    WorldBossManager.fromJSON(data.worldBoss);
+    if (data.arena)         ArenaManager.fromJSON(data.arena);
+    if (data.affinityTower) AffinityTowerManager.fromJSON(data.affinityTower);
+    if (data.dailyCodex)    DailyCodexManager.fromJSON(data.dailyCodex);
+    if (data.guild)          GuildManager.fromJSON(data.guild);
+    if (data.guildShop)      GuildShopManager.fromJSON(data.guildShop);
+    if (data.academyGrounds) AcademyGroundsManager.fromJSON(data.academyGrounds);
+    if (!data.achievements)  AchievementManager.fromJSON(null);
+    if (data.elderTree)      ElderTreeManager.fromJSON(data.elderTree);
     // Migration: grant starter crystals and BASIC_SUMMON to existing saves that lack them
     if (!this.unlockedSystems.has('BASIC_SUMMON')) {
       this.unlockedSystems.add('BASIC_SUMMON');

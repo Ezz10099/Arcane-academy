@@ -1,5 +1,6 @@
 import { RARITY_CONFIG, RARITY_ORDER, ASCENSION_CEILING, CURRENCY } from '../data/constants.js';
 import CurrencyManager from './CurrencyManager.js';
+import AchievementManager from './AchievementManager.js';
 
 class HeroInstance {
   constructor(data) {
@@ -71,6 +72,7 @@ class HeroInstance {
     const rarityKeys = Object.keys(RARITY_ORDER).sort((a, b) => RARITY_ORDER[a] - RARITY_ORDER[b]);
     this.rarity = rarityKeys[RARITY_ORDER[this.rarity] + 1];
     this.awakeningShards -= 50;
+    AchievementManager.checkHeroAscended();
     return true;
   }
 
@@ -102,7 +104,10 @@ class HeroInstance {
 
 const HeroManager = {
   _heroes: new Map(),
-  addHero(instance)  { this._heroes.set(instance.id, instance); },
+  addHero(instance)  {
+    this._heroes.set(instance.id, instance);
+    AchievementManager.checkHeroAdded(this.getAllHeroes());
+  },
   getHero(id)        { return this._heroes.get(id) || null; },
   removeHero(id)     { this._heroes.delete(id); },
   getAllHeroes()      { return [...this._heroes.values()]; },
