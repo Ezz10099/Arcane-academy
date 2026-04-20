@@ -19,7 +19,7 @@ export default class AchievementScene extends Phaser.Scene {
 
     this._buildHeader(W);
 
-    // Scrollable content container (header has depth 10+ so it covers scrolled content naturally)
+    // Scrollable content container (header elements have depth 10+ so they cover scrolled content naturally)
     this._cont = this.add.container(0, HEADER_H);
     this._buildContent(W);
 
