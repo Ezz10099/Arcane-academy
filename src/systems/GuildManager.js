@@ -1,6 +1,7 @@
 import CurrencyManager from './CurrencyManager.js';
 import { CURRENCY } from '../data/constants.js';
 import AchievementManager from './AchievementManager.js';
+import ElderTreeManager from './ElderTreeManager.js';
 
 export const GUILD_CREATION_COST = 5000;
 export const MAX_MEMBERS = 30;
@@ -176,7 +177,7 @@ const GuildManager = {
     let tierAdvanced   = false;
 
     const xpGained    = Math.max(1, Math.floor((damage / cfg.bossHp) * 1000 * cfg.tier));
-    const coinMult    = 1 + this.getCoinBonus();
+    const coinMult    = (1 + this.getCoinBonus()) * ElderTreeManager.getGuildCoinMult();
     const coinsEarned = Math.max(1, Math.floor((damage / cfg.battleHp) * cfg.coinsPerKill * coinMult));
 
     if (bossDefeated) {
