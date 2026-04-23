@@ -5,7 +5,7 @@ import BattleEngine from '../systems/BattleEngine.js';
 import ArenaManager, { RANK_CONFIG } from '../systems/ArenaManager.js';
 import AchievementManager from '../systems/AchievementManager.js';
 import DailyCodexManager from '../systems/DailyCodexManager.js';
-import { CLASS_DEFAULTS, CURRENCY } from '../data/constants.js';
+import { CURRENCY } from '../data/constants.js';
 
 const CLASS_COLORS = {
   WARRIOR: 0xcc5522, TANK: 0x2266cc, MAGE: 0x882299,
@@ -53,6 +53,8 @@ export default class ArenaScene extends Phaser.Scene {
     const history   = ArenaManager.battleHistory;
     const opponents = ArenaManager.getOpponents();
     const hasHeroes = HeroManager.getAllHeroes().length > 0;
+    const squadEntries = GameState.getBattleSquadEntries();
+    const squadNames = squadEntries.map(e => HeroManager.getHero(e.heroId)?.name).filter(Boolean);
 
     c.add(this.add.rectangle(W / 2, 427, W, 854, 0x0a0a1a));
 
@@ -75,8 +77,12 @@ export default class ArenaScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, 144, 'Attempts: ' + attempts + ' / ' + maxAtt, {
       font: '14px monospace', fill: attempts > 0 ? '#aaffaa' : '#ff6666',
     }).setOrigin(0.5));
+    c.add(this.add.rectangle(W / 2, 164, 430, 20, 0x131326).setStrokeStyle(1, 0x334466));
+    c.add(this.add.text(W / 2, 164, `SQUAD ${squadEntries.length}/5: ${(squadNames.join(', ') || 'none').slice(0, 48)}`, {
+      font: '10px monospace', fill: '#99ccff',
+    }).setOrigin(0.5));
 
-    let nextY = 180;
+    let nextY = 194;
 
     if (history.length > 0) {
       c.add(this.add.text(W / 2, nextY, 'RECENT BATTLES', {
@@ -147,9 +153,12 @@ export default class ArenaScene extends Phaser.Scene {
     if (!ArenaManager.canAttempt()) return;
     this._selectedOpponent = opponent;
 
-    const playerSquad = HeroManager.getAllHeroes().map(h => ({
-      hero: h, row: CLASS_DEFAULTS[h.heroClass]?.defaultRow || 'FRONT',
-    }));
+    const playerSquad = GameState.getBattleSquadEntries()
+      .map(entry => {
+        const hero = HeroManager.getHero(entry.heroId);
+        return hero ? { hero, row: entry.row } : null;
+      })
+      .filter(Boolean);
 
     this._engine = new BattleEngine({
       playerSquad,

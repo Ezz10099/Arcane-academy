@@ -6,7 +6,7 @@ import GuildManager, {
   BOSS_TIERS, LEVEL_PERKS, GUILD_CREATION_COST, BASE_ATTACK_COOLDOWN_SECS
 } from '../systems/GuildManager.js';
 import AchievementManager from '../systems/AchievementManager.js';
-import { CLASS_DEFAULTS, CURRENCY } from '../data/constants.js';
+import { CURRENCY } from '../data/constants.js';
 
 const CLASS_COLORS = {
   WARRIOR: 0xcc5522, TANK: 0x2266cc, MAGE: 0x882299,
@@ -130,6 +130,8 @@ export default class GuildScene extends Phaser.Scene {
     const cdLeft  = GuildManager.getCooldownRemainingSecs();
     const coins   = CurrencyManager.get(CURRENCY.GUILD_COINS);
     const hasHeroes = HeroManager.getAllHeroes().length > 0;
+    const squadEntries = GameState.getBattleSquadEntries();
+    const squadNames = squadEntries.map(e => HeroManager.getHero(e.heroId)?.name).filter(Boolean);
     const canFight  = attacks > 0 && cdLeft <= 0 && hasHeroes;
 
     c.add(this.add.rectangle(W / 2, 427, W, 854, 0x0a0a1a));
@@ -215,12 +217,15 @@ export default class GuildScene extends Phaser.Scene {
         .on('pointerout',  () => atkBg.setFillStyle(0x3a0000))
         .on('pointerup',   () => this._startAttack());
     }
+    c.add(this.add.rectangle(W / 2, 438, 380, 20, 0x131326).setStrokeStyle(1, 0x4a4a66));
+    c.add(this.add.text(W / 2, 438, `SQUAD ${squadEntries.length}/5: ${(squadNames.join(', ') || 'none').slice(0, 46)}`,
+      { font: '10px monospace', fill: '#99ccff' }).setOrigin(0.5));
 
     // Level perks
-    c.add(this.add.text(W / 2, 466, 'GUILD PERKS', { font: '12px monospace', fill: '#886699' }).setOrigin(0.5));
+    c.add(this.add.text(W / 2, 470, 'GUILD PERKS', { font: '12px monospace', fill: '#886699' }).setOrigin(0.5));
     [5, 10, 20, 30].forEach((lv, i) => {
       const unlocked = guild.level >= lv;
-      c.add(this.add.text(W / 2, 486 + i * 20,
+      c.add(this.add.text(W / 2, 490 + i * 20,
         (unlocked ? '\u2713 ' : '\u25cb ') + 'Lv.' + lv + ': ' + LEVEL_PERKS[lv],
         { font: '11px monospace', fill: unlocked ? '#44cc44' : '#555555' }).setOrigin(0.5));
     });
@@ -251,9 +256,12 @@ export default class GuildScene extends Phaser.Scene {
   _startAttack() {
     if (!GuildManager.canAttackNow()) return;
     const enemySquad  = GuildManager.generateBossSquad();
-    const playerSquad = HeroManager.getAllHeroes().map(h => ({
-      hero: h, row: CLASS_DEFAULTS[h.heroClass]?.defaultRow || 'FRONT'
-    }));
+    const playerSquad = GameState.getBattleSquadEntries()
+      .map(entry => {
+        const hero = HeroManager.getHero(entry.heroId);
+        return hero ? { hero, row: entry.row } : null;
+      })
+      .filter(Boolean);
 
     this._engine = new BattleEngine({ playerSquad, enemySquad, onEvent: ev => this._onBattleEvent(ev) });
     this._engine.start();
