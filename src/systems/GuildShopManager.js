@@ -60,6 +60,12 @@ function generateDailyRotation(daySeed) {
   const rand = seededRandom(daySeed);
   const gear = shuffle(GEAR_POOL, rand);
   const cosmetic = shuffle(COSMETIC_POOL, rand);
+  const out = gear.slice(0, 3).concat(cosmetic.slice(0, 3));
+  const extraSlots = GuildManager.getGuildShopExtraSlots();
+  if (extraSlots > 0) {
+    const extraPool = gear.slice(3).concat(cosmetic.slice(3));
+    const extra = shuffle(extraPool, rand).slice(0, extraSlots);
+    for (const item of extra) out.push(item);
   const out = [...gear.slice(0, 3), ...cosmetic.slice(0, 3)];
   const extraSlots = GuildManager.getGuildShopExtraSlots();
   if (extraSlots > 0) {
@@ -94,10 +100,9 @@ const GuildShopManager = {
 
   getItems() {
     this._checkDailyReset();
-    return this.getRotation().map(item => ({
-      ...item,
-      purchased: this.purchasedToday.includes(item.id),
-    }));
+    return this.getRotation().map(item =>
+      Object.assign({}, item, { purchased: this.purchasedToday.includes(item.id) })
+    );
   },
 
   buyItem(itemId) {
