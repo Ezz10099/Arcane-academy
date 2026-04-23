@@ -88,6 +88,11 @@ export const TREE_NODES = [
     cost: 95000, requires: null,
   },
   {
+    id: 'academy_guild_cooldown', label: 'Raid Logistics', section: 'ACADEMY',
+    desc: 'Guild Boss attack cooldown reduced',
+    cost: 125000, requires: null,
+  },
+  {
     id: 'academy_wishlist_slot', label: 'Curator Privilege', section: 'ACADEMY',
     desc: '+1 Wishlist slot',
     cost: 120000, requires: null,
@@ -171,6 +176,10 @@ const ElderTreeManager = {
 
   getGuildCoinMult() {
     return this._purchased.has('academy_guild_coin') ? 1.10 : 1;
+  },
+
+  getGuildCooldownMult() {
+    return this._purchased.has('academy_guild_cooldown') ? 0.67 : 1;
   },
 
   getWishlistMaxSizeBonus() {
