@@ -150,6 +150,10 @@ const GuildManager = {
     return ATTACKS_PER_DAY + ((this.guild && this.guild.level >= 10) ? 1 : 0);
   },
 
+  getGuildShopExtraSlots() {
+    return (this.guild && this.guild.level >= 5) ? 1 : 0;
+  },
+
   getAttacksRemaining() {
     this._checkDailyReset();
     return Math.max(0, this.getMaxAttacksPerDay() - this.bossState.attacksUsed);

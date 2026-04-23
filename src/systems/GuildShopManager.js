@@ -1,5 +1,6 @@
 import CurrencyManager from './CurrencyManager.js';
 import { CURRENCY } from '../data/constants.js';
+import GuildManager from './GuildManager.js';
 
 const GEAR_POOL = [
   { id: 'gs_iron_sword',     name: 'Iron Sword',       type: 'gear', slot: 'WEAPON',    rarity: 'COMMON',    desc: '+15 DMG',           cost: 80,   rarityColor: '#aaaaaa' },
@@ -51,10 +52,14 @@ function shuffle(arr, rand) {
 
 function generateDailyRotation(daySeed) {
   const rand = seededRandom(daySeed);
-  return [
-    ...shuffle(GEAR_POOL,     rand).slice(0, 3),
-    ...shuffle(COSMETIC_POOL, rand).slice(0, 3),
-  ];
+  const gear = shuffle(GEAR_POOL, rand);
+  const cosmetic = shuffle(COSMETIC_POOL, rand);
+  const out = [...gear.slice(0, 3), ...cosmetic.slice(0, 3)];
+  const extraSlots = GuildManager.getGuildShopExtraSlots();
+  if (extraSlots > 0) {
+    out.push(...shuffle([...gear.slice(3), ...cosmetic.slice(3)], rand).slice(0, extraSlots));
+  }
+  return out;
 }
 
 const GuildShopManager = {
