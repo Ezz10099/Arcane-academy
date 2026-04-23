@@ -146,9 +146,13 @@ const GuildManager = {
 
   getCurrentTierConfig() { return BOSS_TIERS[this.bossState.tierIndex]; },
 
+  getMaxAttacksPerDay() {
+    return ATTACKS_PER_DAY + ((this.guild && this.guild.level >= 10) ? 1 : 0);
+  },
+
   getAttacksRemaining() {
     this._checkDailyReset();
-    return Math.max(0, ATTACKS_PER_DAY - this.bossState.attacksUsed);
+    return Math.max(0, this.getMaxAttacksPerDay() - this.bossState.attacksUsed);
   },
 
   getAttackCooldownSecs() {
@@ -184,7 +188,7 @@ const GuildManager = {
 
   recordAttack(rawDamage) {
     this._checkDailyReset();
-    this.bossState.attacksUsed = Math.min(ATTACKS_PER_DAY, this.bossState.attacksUsed + 1);
+    this.bossState.attacksUsed = Math.min(this.getMaxAttacksPerDay(), this.bossState.attacksUsed + 1);
     this.bossState.lastAttackAt = Date.now();
 
     const cfg    = this.getCurrentTierConfig();

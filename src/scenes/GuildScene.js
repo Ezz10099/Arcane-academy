@@ -3,7 +3,7 @@ import HeroManager     from '../systems/HeroManager.js';
 import CurrencyManager from '../systems/CurrencyManager.js';
 import BattleEngine    from '../systems/BattleEngine.js';
 import GuildManager, {
-  BOSS_TIERS, LEVEL_PERKS, GUILD_CREATION_COST, ATTACKS_PER_DAY, BASE_ATTACK_COOLDOWN_SECS
+  BOSS_TIERS, LEVEL_PERKS, GUILD_CREATION_COST, BASE_ATTACK_COOLDOWN_SECS
 } from '../systems/GuildManager.js';
 import AchievementManager from '../systems/AchievementManager.js';
 import { CLASS_DEFAULTS, CURRENCY } from '../data/constants.js';
@@ -126,6 +126,7 @@ export default class GuildScene extends Phaser.Scene {
     const bs      = GuildManager.bossState;
     const cfg     = GuildManager.getCurrentTierConfig();
     const attacks = GuildManager.getAttacksRemaining();
+    const maxAtt  = GuildManager.getMaxAttacksPerDay();
     const cdLeft  = GuildManager.getCooldownRemainingSecs();
     const coins   = CurrencyManager.get(CURRENCY.GUILD_COINS);
     const hasHeroes = HeroManager.getAllHeroes().length > 0;
@@ -177,7 +178,7 @@ export default class GuildScene extends Phaser.Scene {
 
     // Attacks remaining
     c.add(this.add.text(W / 2, 316,
-      'Attacks today: ' + (ATTACKS_PER_DAY - attacks) + ' / ' + ATTACKS_PER_DAY + ' used',
+      'Attacks today: ' + (maxAtt - attacks) + ' / ' + maxAtt + ' used',
       { font: '13px monospace', fill: attacks > 0 ? '#aaddff' : '#ff6666' }).setOrigin(0.5));
     const cdBase = GuildManager.getAttackCooldownSecs();
     const cdLabel = cdLeft > 0
