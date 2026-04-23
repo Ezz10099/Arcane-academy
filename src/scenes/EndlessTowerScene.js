@@ -51,6 +51,8 @@ export default class EndlessTowerScene extends Phaser.Scene {
     const isMilestone = floor % 10 === 0;
     const enemies    = EndlessTowerManager.generateEnemySquad(floor);
     const hasHeroes  = HeroManager.getAllHeroes().length > 0;
+    const squadEntries = GameState.getBattleSquadEntries();
+    const squadNames = squadEntries.map(e => HeroManager.getHero(e.heroId)?.name).filter(Boolean);
 
     c.add(this.add.rectangle(W / 2, 427, W, 854, 0x0a0a1a));
 
@@ -71,9 +73,13 @@ export default class EndlessTowerScene extends Phaser.Scene {
         font: '14px monospace', fill: '#888888'
       }).setOrigin(0.5));
     }
+    c.add(this.add.rectangle(W / 2, 206, 430, 20, 0x1a1230).setStrokeStyle(1, 0x4b2b66));
+    c.add(this.add.text(W / 2, 206, `SQUAD ${squadEntries.length}/5: ${(squadNames.join(', ') || 'none').slice(0, 48)}`, {
+      font: '10px monospace', fill: '#caa3ff'
+    }).setOrigin(0.5));
 
     // Reward preview
-    const rY = 260;
+    const rY = 272;
     c.add(this.add.rectangle(W / 2, rY, 380, isMilestone ? 100 : 72, 0x0d0d22)
       .setStrokeStyle(1, 0x3a1a5a));
     c.add(this.add.text(W / 2, rY - 26, 'FLOOR REWARD', {
@@ -94,7 +100,7 @@ export default class EndlessTowerScene extends Phaser.Scene {
     }
 
     // Enemy names preview
-    const previewY = isMilestone ? 358 : 332;
+    const previewY = isMilestone ? 370 : 344;
     c.add(this.add.text(W / 2, previewY,
       'Enemies: ' + enemies.map(e => e.name).join(', '), {
         font: '12px monospace', fill: '#ff9988'

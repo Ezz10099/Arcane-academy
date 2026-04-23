@@ -53,6 +53,8 @@ export default class ArenaScene extends Phaser.Scene {
     const history   = ArenaManager.battleHistory;
     const opponents = ArenaManager.getOpponents();
     const hasHeroes = HeroManager.getAllHeroes().length > 0;
+    const squadEntries = GameState.getBattleSquadEntries();
+    const squadNames = squadEntries.map(e => HeroManager.getHero(e.heroId)?.name).filter(Boolean);
 
     c.add(this.add.rectangle(W / 2, 427, W, 854, 0x0a0a1a));
 
@@ -75,8 +77,12 @@ export default class ArenaScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, 144, 'Attempts: ' + attempts + ' / ' + maxAtt, {
       font: '14px monospace', fill: attempts > 0 ? '#aaffaa' : '#ff6666',
     }).setOrigin(0.5));
+    c.add(this.add.rectangle(W / 2, 164, 430, 20, 0x131326).setStrokeStyle(1, 0x334466));
+    c.add(this.add.text(W / 2, 164, `SQUAD ${squadEntries.length}/5: ${(squadNames.join(', ') || 'none').slice(0, 48)}`, {
+      font: '10px monospace', fill: '#99ccff',
+    }).setOrigin(0.5));
 
-    let nextY = 180;
+    let nextY = 194;
 
     if (history.length > 0) {
       c.add(this.add.text(W / 2, nextY, 'RECENT BATTLES', {

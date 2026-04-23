@@ -56,6 +56,8 @@ export default class WorldBossScene extends Phaser.Scene {
     const attempts = WorldBossManager.getAttemptsRemaining();
     const maxAtt   = WorldBossManager.getMaxAttempts();
     const hasHeroes = HeroManager.getAllHeroes().length > 0;
+    const squadEntries = GameState.getBattleSquadEntries();
+    const squadNames = squadEntries.map(e => HeroManager.getHero(e.heroId)?.name).filter(Boolean);
     const canFight  = attempts > 0 && hasHeroes;
 
     c.add(this.add.rectangle(W / 2, 427, W, 854, 0x0a0a1a));
@@ -124,9 +126,12 @@ export default class WorldBossScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, 385,
       'Reward (full clear): +' + previewGold + ' Gold  +' + previewCrys + ' Crystals',
       { font: '12px monospace', fill: '#888888' }).setOrigin(0.5));
+    c.add(this.add.rectangle(W / 2, 410, 390, 20, 0x131326).setStrokeStyle(1, 0x4a4a66));
+    c.add(this.add.text(W / 2, 410, `SQUAD ${squadEntries.length}/5: ${(squadNames.join(', ') || 'none').slice(0, 46)}`,
+      { font: '10px monospace', fill: '#99ccff' }).setOrigin(0.5));
 
     // ATTACK button
-    const btnY    = 455;
+    const btnY    = 468;
     const btnC    = canFight ? 0x3a0000 : 0x1a1a2a;
     const btnBord = canFight ? 0xff4444 : 0x333333;
     const btnFill = canFight ? '#ff6644' : '#555555';
