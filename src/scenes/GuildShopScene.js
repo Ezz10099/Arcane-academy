@@ -25,11 +25,10 @@ export default class GuildShopScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, 72,
       '\u2605 ' + coins.toLocaleString() + ' Guild Coins',
       { font: '16px monospace', fill: '#ffd700' }).setOrigin(0.5));
-    c.add(this.add.text(W / 2, 94,
-      'Rotates daily  \u2022  3 gear   3 cosmetics',
-      { font: '11px monospace', fill: '#555577' }).setOrigin(0.5));
-
     const items = GuildShopManager.getItems();
+    c.add(this.add.text(W / 2, 94,
+      `Rotates daily  \u2022  ${items.length} total items`,
+      { font: '11px monospace', fill: '#555577' }).setOrigin(0.5));
 
     items.forEach((item, i) => {
       const col = i % 2;
