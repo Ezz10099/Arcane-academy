@@ -24,23 +24,26 @@ export default class MainHubScene extends Phaser.Scene {
     this._premText    = this.add.text(20, 134, 'Prem.Crystals: 0',{ font: '13px monospace', fill: '#cc88ff' });
     this._rateText    = this.add.text(20, 154, '+0/s',            { font: '13px monospace', fill: '#888888' });
 
-    // Nav buttons (13 items, 50px spacing from y=192)
+    // Nav buttons
     const navItems = [
-      { label: '\u2694  CAMPAIGN',         y: 192, scene: 'Campaign'              },
-      { label: '\u221e  ENDLESS TOWER',    y: 242, scene: 'EndlessTower'          },
-      { label: '\u2605  WORLD BOSS',       y: 292, scene: 'WorldBoss'             },
-      { label: '\u2663  ARENA',            y: 342, scene: 'Arena'                 },
-      { label: '\u2734  SUMMON',           y: 392, scene: 'Summon'                },
-      { label: '\u2691  ROSTER',           y: 442, scene: 'Roster'                },
-      { label: '\u2726  AWAKENING ALTAR',  y: 492, scene: 'AwakenAltar'           },
-      { label: '\u25c6  AFFINITY TOWERS',  y: 542, scene: 'AffinityTowerSelection'},
-      { label: '\u2295  DAILY CODEX',      y: 592, scene: 'DailyCodex'            },
-      { label: '\u26e8  GUILD',            y: 642, scene: 'Guild'                 },
-      { label: '\u2767  ELDER TREE',       y: 692, scene: 'ElderTree'             },
-      { label: '\u2318  ACHIEVEMENTS',     y: 742, scene: 'Achievement'           },
-      { label: '\u2699  SETTINGS',         y: 792, scene: 'Settings'              },
+      { label: '\u2694  CAMPAIGN',        scene: 'Campaign'              },
+      { label: '\u221e  ENDLESS TOWER',   scene: 'EndlessTower'          },
+      { label: '\u2605  WORLD BOSS',      scene: 'WorldBoss'             },
+      { label: '\u2663  ARENA',           scene: 'Arena'                 },
+      { label: '\u2734  SUMMON',          scene: 'Summon'                },
+      { label: '\u2691  ROSTER',          scene: 'Roster'                },
+      { label: '\u2692  GEAR FORGE',      scene: 'GearForge'             },
+      { label: '\u2726  AWAKENING ALTAR', scene: 'AwakenAltar'           },
+      { label: '\u25c6  AFFINITY TOWERS', scene: 'AffinityTowerSelection'},
+      { label: '\u2295  DAILY CODEX',     scene: 'DailyCodex'            },
+      { label: '\u26e8  GUILD',           scene: 'Guild'                 },
+      { label: '\u2767  ELDER TREE',      scene: 'ElderTree'             },
+      { label: '\u2318  ACHIEVEMENTS',    scene: 'Achievement'           },
+      { label: '\u2699  SETTINGS',        scene: 'Settings'              },
     ];
-    for (const item of navItems) this._makeNavButton(item, W);
+    const startY = 188;
+    const spacing = 46;
+    navItems.forEach((item, i) => this._makeNavButton({ ...item, y: startY + (i * spacing) }, W));
 
     // Timers
     this.time.addEvent({ delay: 500,   loop: true, callback: this._refreshUI,  callbackScope: this });
