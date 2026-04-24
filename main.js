@@ -17,6 +17,7 @@ import AchievementScene             from './src/scenes/AchievementScene.js';
 import ElderTreeScene               from './src/scenes/ElderTreeScene.js';
 import AwakenAltarScene             from './src/scenes/AwakenAltarScene.js';
 import SettingsScene                from './src/scenes/SettingsScene.js';
+import GearForgeScene               from './src/scenes/GearForgeScene.js';
 
 new Phaser.Game({
   type: Phaser.AUTO,
