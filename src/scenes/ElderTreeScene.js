@@ -1,12 +1,12 @@
 import ElderTreeManager, { TREE_NODES } from '../systems/ElderTreeManager.js';
 import CurrencyManager from '../systems/CurrencyManager.js';
 import GameState from '../systems/GameState.js';
-import { CURRENCY } from '../data/constants.js';
+import { CURRENCY, CURRENCY_LABEL } from '../data/constants.js';
 
 const HEADER_H  = 90;
 const CARD_H    = 80;
 const CARD_GAP  = 6;
-const SECTIONS  = ['ECONOMY', 'GEAR COSTS', 'CAMPAIGN', 'IDLE CAP'];
+const SECTIONS  = ['ECONOMY', 'ACADEMY'];
 
 export default class ElderTreeScene extends Phaser.Scene {
   constructor() { super('ElderTree'); }
@@ -47,7 +47,7 @@ export default class ElderTreeScene extends Phaser.Scene {
       { font: '12px monospace', fill: '#558866' }).setOrigin(0.5).setDepth(11);
 
     this._goldLabel = this.add.text(W - 16, 58,
-      'Gold: ' + CurrencyManager.get(CURRENCY.GOLD).toLocaleString(),
+      `${CURRENCY_LABEL.GOLD}: ` + CurrencyManager.get(CURRENCY.GOLD).toLocaleString(),
       { font: '11px monospace', fill: '#ffd700' }).setOrigin(1, 0.5).setDepth(11);
 
     this.add.rectangle(W / 2, HEADER_H - 1, W, 2, 0x224422).setDepth(10);
@@ -115,7 +115,7 @@ export default class ElderTreeScene extends Phaser.Scene {
 
     // Cost
     const costCol = owned ? '#556655' : locked ? '#333333' : canBuy ? '#ffd700' : '#887744';
-    const costTxt = this.add.text(indX, y + 54, owned ? 'Purchased' : node.cost.toLocaleString() + ' Gold',
+    const costTxt = this.add.text(indX, y + 54, owned ? 'Purchased' : `${node.cost.toLocaleString()} ${CURRENCY_LABEL.GOLD}`,
       { font: '10px monospace', fill: costCol }).setAlpha(alpha);
     this._cont.add(costTxt);
 
@@ -127,7 +127,7 @@ export default class ElderTreeScene extends Phaser.Scene {
     } else if (!locked) {
       const btnColor = canBuy ? 0x1a4a22 : 0x111811;
       const btnBorder = canBuy ? 0x44cc66 : 0x334433;
-      const btnTxt   = canBuy ? 'BUY' : 'NEED GOLD';
+      const btnTxt   = canBuy ? 'BUY' : `NEED ${CURRENCY_LABEL.GOLD.toUpperCase()}`;
       const btnTxtCol = canBuy ? '#55ff77' : '#445544';
 
       const btn = this.add.rectangle(W - 50, y + CARD_H / 2, 72, 36, btnColor)
@@ -164,7 +164,7 @@ export default class ElderTreeScene extends Phaser.Scene {
       { font: '18px monospace', fill: '#ffffff' }).setOrigin(0.5));
     overlay.add(this.add.text(0, -16, node.desc,
       { font: '12px monospace', fill: '#aaccaa' }).setOrigin(0.5));
-    overlay.add(this.add.text(0, 14, 'Cost: ' + node.cost.toLocaleString() + ' Gold',
+    overlay.add(this.add.text(0, 14, `Cost: ${node.cost.toLocaleString()} ${CURRENCY_LABEL.GOLD}`,
       { font: '14px monospace', fill: '#ffd700' }).setOrigin(0.5));
 
     // Confirm button
@@ -175,7 +175,7 @@ export default class ElderTreeScene extends Phaser.Scene {
       this._closePopup();
       if (bought) {
         GameState.save();
-        this._goldLabel.setText('Gold: ' + CurrencyManager.get(CURRENCY.GOLD).toLocaleString());
+        this._goldLabel.setText(`${CURRENCY_LABEL.GOLD}: ` + CurrencyManager.get(CURRENCY.GOLD).toLocaleString());
         this._buildContent(W);
       }
     });
