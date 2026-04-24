@@ -13,7 +13,7 @@ const HERO_DEFINITIONS = [
     ultimateAbilityId: 'wa_berserker_surge',
     innateAbilityNames: ['Ash Strike', 'Heated Guard'],
     ultimateAbilityNames: ['Blazing Charge'],
-    bondIds: [],
+    bondIds: ['bond_branded_pair'],
     notes: 'Starter hero gifted at campaign open. Designed to carry players through Region 1.'
   },
   {
