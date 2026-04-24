@@ -77,6 +77,41 @@ export const RARITY_STAT_MULTIPLIER = Object.freeze({
   MYTHIC: 2.8,
   ASCENDED: 3.8
 });
+
+export const LEVEL_STAT_GROWTH = Object.freeze({
+  hp: 0.02,
+  defense: 0.018,
+  damage: 0.022
+});
+
+export const STAR_STAT_BONUS_PER_STAR = 0.15;
+
+export const DAMAGE_FORMULA = Object.freeze({
+  defenseMitigationConstant: 500
+});
+
+export const AFFINITY_DAMAGE_MULTIPLIER = Object.freeze({
+  STRONG: 1.3,
+  NEUTRAL: 1.0,
+  WEAK: 0.75
+});
+
+export const ABILITY_POWER_MULTIPLIER_RANGES = Object.freeze({
+  LIGHT_AUTO: Object.freeze({ min: 0.5, max: 0.8 }),
+  NORMAL_SINGLE: Object.freeze({ min: 1.2, max: 1.8 }),
+  NORMAL_AOE: Object.freeze({ min: 0.7, max: 1.0 }),
+  ULTIMATE_SINGLE: Object.freeze({ min: 2.5, max: 4.0 }),
+  ULTIMATE_AOE: Object.freeze({ min: 1.2, max: 2.0 }),
+  HEAL: Object.freeze({ min: 1.5, max: 2.5 })
+});
+
+export const ULTIMATE_CHARGE = Object.freeze({
+  COST: 100,
+  READY: 100,
+  AUTO_TRIGGER: 150,
+  PASSIVE_PER_SECOND: 5,
+  ALLY_CAST_BONUS: 20
+});
 export const CLASS_DEFAULTS = Object.freeze({
   WARRIOR:  { defaultRow: 'FRONT', statProfile: 'balanced'        },
   TANK:     { defaultRow: 'FRONT', statProfile: 'high_hp_def'     },
@@ -99,5 +134,7 @@ export const ASCENSION_CEILING = Object.freeze({
 export default {
   CLASS, AFFINITY, RARITY, RARITY_ORDER, GEAR_SLOT, CURRENCY,
   CURRENCY_LABEL, STATUS_EFFECT, FORMATION_ROW, RARITY_CONFIG, AFFINITY_ADVANTAGES,
-  CLASS_BASE_STATS, RARITY_STAT_MULTIPLIER, CLASS_DEFAULTS, ASCENSION_CEILING
+  CLASS_BASE_STATS, RARITY_STAT_MULTIPLIER, LEVEL_STAT_GROWTH, STAR_STAT_BONUS_PER_STAR,
+  DAMAGE_FORMULA, AFFINITY_DAMAGE_MULTIPLIER, ABILITY_POWER_MULTIPLIER_RANGES,
+  ULTIMATE_CHARGE, CLASS_DEFAULTS, ASCENSION_CEILING
 };
