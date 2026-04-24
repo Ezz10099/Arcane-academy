@@ -2,69 +2,56 @@ import CurrencyManager from './CurrencyManager.js';
 import { CURRENCY } from '../data/constants.js';
 
 export const TREE_NODES = [
-  // Economy (no prerequisites)
+  // Economy Branch (Layer 1)
   {
-    id: 'eco_gold',   label: 'Gold Harvest',     section: 'ECONOMY',
+    id: 'eco_1', label: 'E1 • Gold Harvest I', section: 'ECONOMY',
     desc: '+10% Gold from all sources',
-    cost: 10000, requires: null,
+    cost: 2000, requires: null,
   },
   {
-    id: 'eco_shard',  label: 'Shard Flow',        section: 'ECONOMY',
-    desc: '+15% Awakening Shard drops',
-    cost: 25000, requires: null,
+    id: 'eco_2', label: 'E2 • Gold Harvest II', section: 'ECONOMY',
+    desc: '+20% Gold from all sources',
+    cost: 5000, requires: 'eco_1',
   },
   {
-    id: 'eco_codex',  label: 'Codex Insight',     section: 'ECONOMY',
-    desc: '+5% Daily Codex reward quality',
-    cost: 15000, requires: null,
-  },
-  // Gear cost chain
-  {
-    id: 'eco_gear_1', label: 'Forge Mastery I',   section: 'GEAR COSTS',
-    desc: '-5% Gear upgrade cost',
-    cost: 20000, requires: null,
+    id: 'eco_3', label: 'E3 • Resonance Study', section: 'ECONOMY',
+    desc: '+30% Awakening Shard drop rate',
+    cost: 8000, requires: 'eco_2',
   },
   {
-    id: 'eco_gear_2', label: 'Forge Mastery II',  section: 'GEAR COSTS',
-    desc: '-5% Gear upgrade cost (total -10%)',
-    cost: 40000, requires: 'eco_gear_1',
+    id: 'eco_4', label: 'E4 • Forgemaster', section: 'ECONOMY',
+    desc: 'Reduced Gear upgrade cost -15%',
+    cost: 12000, requires: 'eco_3',
   },
   {
-    id: 'eco_gear_3', label: 'Forge Mastery III', section: 'GEAR COSTS',
-    desc: '-5% Gear upgrade cost (total -15%)',
-    cost: 70000, requires: 'eco_gear_2',
-  },
-  // Stage skip chain
-  {
-    id: 'eco_skip_1', label: 'Swift Advance I',   section: 'CAMPAIGN',
-    desc: '-10% stage skip cost',
-    cost: 12000, requires: null,
+    id: 'eco_5', label: 'E5 • Codex Insight', section: 'ECONOMY',
+    desc: '+15% Daily Codex chest quality',
+    cost: 18000, requires: 'eco_4',
   },
   {
-    id: 'eco_skip_2', label: 'Swift Advance II',  section: 'CAMPAIGN',
-    desc: '-10% stage skip cost (total -20%)',
-    cost: 30000, requires: 'eco_skip_1',
-  },
-  // Idle cap chain (base: 16 h)
-  {
-    id: 'eco_idle_1', label: 'Deep Roots I',      section: 'IDLE CAP',
-    desc: 'Offline cap: 16h \u2192 22h',
-    cost: 18000, requires: null,
+    id: 'eco_6', label: 'E6 • Swift Advance', section: 'ECONOMY',
+    desc: 'Reduced stage skip cost -20%',
+    cost: 25000, requires: 'eco_5',
   },
   {
-    id: 'eco_idle_2', label: 'Deep Roots II',     section: 'IDLE CAP',
-    desc: 'Offline cap: 22h \u2192 28h',
-    cost: 35000, requires: 'eco_idle_1',
+    id: 'eco_7', label: 'E7 • Deep Roots I', section: 'ECONOMY',
+    desc: 'Idle cap: 16h → 22h',
+    cost: 35000, requires: 'eco_6',
   },
   {
-    id: 'eco_idle_3', label: 'Deep Roots III',    section: 'IDLE CAP',
-    desc: 'Offline cap: 28h \u2192 35h',
-    cost: 60000, requires: 'eco_idle_2',
+    id: 'eco_8', label: 'E8 • Deep Roots II', section: 'ECONOMY',
+    desc: 'Idle cap: 22h → 28h',
+    cost: 55000, requires: 'eco_7',
   },
   {
-    id: 'eco_idle_4', label: 'Deep Roots IV',     section: 'IDLE CAP',
-    desc: 'Offline cap: 35h \u2192 45h',
-    cost: 90000, requires: 'eco_idle_3',
+    id: 'eco_9', label: 'E9 • Deep Roots III', section: 'ECONOMY',
+    desc: 'Idle cap: 28h → 35h',
+    cost: 80000, requires: 'eco_8',
+  },
+  {
+    id: 'eco_10', label: 'E10 • Deep Roots IV', section: 'ECONOMY',
+    desc: 'Idle cap: 35h → 45h (hard cap)',
+    cost: 120000, requires: 'eco_9',
   },
   // Academy branch (mid-game progression quality-of-life)
   {
@@ -129,37 +116,32 @@ const ElderTreeManager = {
   // ── Bonus getters ─────────────────────────────────────────────────────────
 
   getGoldBonus() {
-    return this._purchased.has('eco_gold') ? 0.10 : 0;
+    if (this._purchased.has('eco_2')) return 0.20;
+    if (this._purchased.has('eco_1')) return 0.10;
+    return 0;
   },
 
   getShardBonus() {
-    return this._purchased.has('eco_shard') ? 0.15 : 0;
+    return this._purchased.has('eco_3') ? 0.30 : 0;
   },
 
   getGearCostMult() {
-    let disc = 0;
-    if (this._purchased.has('eco_gear_1')) disc += 0.05;
-    if (this._purchased.has('eco_gear_2')) disc += 0.05;
-    if (this._purchased.has('eco_gear_3')) disc += 0.05;
-    return 1 - disc;
+    return this._purchased.has('eco_4') ? 0.85 : 1;
   },
 
   getCodexQualityBonus() {
-    return this._purchased.has('eco_codex') ? 0.05 : 0;
+    return this._purchased.has('eco_5') ? 0.15 : 0;
   },
 
   getSkipCostMult() {
-    let disc = 0;
-    if (this._purchased.has('eco_skip_1')) disc += 0.10;
-    if (this._purchased.has('eco_skip_2')) disc += 0.10;
-    return 1 - disc;
+    return this._purchased.has('eco_6') ? 0.80 : 1;
   },
 
   getIdleCapSecs() {
-    if (this._purchased.has('eco_idle_4')) return 45 * 3600;
-    if (this._purchased.has('eco_idle_3')) return 35 * 3600;
-    if (this._purchased.has('eco_idle_2')) return 28 * 3600;
-    if (this._purchased.has('eco_idle_1')) return 22 * 3600;
+    if (this._purchased.has('eco_10')) return 45 * 3600;
+    if (this._purchased.has('eco_9')) return 35 * 3600;
+    if (this._purchased.has('eco_8')) return 28 * 3600;
+    if (this._purchased.has('eco_7')) return 22 * 3600;
     return 16 * 3600;
   },
 
@@ -193,7 +175,27 @@ const ElderTreeManager = {
   toJSON()  { return { purchased: [...this._purchased] }; },
   fromJSON(data) {
     if (!data) return;
-    this._purchased = new Set(data.purchased || []);
+    const migrated = new Set(data.purchased || []);
+    const legacyToNew = [
+      ['eco_gold', 'eco_1'],
+      ['eco_shard', 'eco_3'],
+      ['eco_codex', 'eco_5'],
+      ['eco_gear_1', 'eco_4'],
+      ['eco_gear_2', 'eco_4'],
+      ['eco_gear_3', 'eco_4'],
+      ['eco_skip_1', 'eco_6'],
+      ['eco_skip_2', 'eco_6'],
+      ['eco_idle_1', 'eco_7'],
+      ['eco_idle_2', 'eco_8'],
+      ['eco_idle_3', 'eco_9'],
+      ['eco_idle_4', 'eco_10']
+    ];
+    legacyToNew.forEach(([oldId, newId]) => {
+      if (migrated.has(oldId)) migrated.add(newId);
+    });
+    this._purchased = new Set(
+      [...migrated].filter(id => TREE_NODES.some(n => n.id === id))
+    );
   },
 };
 
