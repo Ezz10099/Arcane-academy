@@ -1,4 +1,7 @@
-import { AFFINITY_ADVANTAGES, CLASS, STATUS_EFFECT, FORMATION_ROW } from '../data/constants.js';
+import {
+  AFFINITY_ADVANTAGES, CLASS, STATUS_EFFECT, FORMATION_ROW,
+  DAMAGE_FORMULA, AFFINITY_DAMAGE_MULTIPLIER, ABILITY_POWER_MULTIPLIER_RANGES, ULTIMATE_CHARGE
+} from '../data/constants.js';
 import StatusEffectManager from './StatusEffectManager.js';
 import BondManager from './BondManager.js';
 import ABILITY_DEFINITIONS from '../data/abilityDefinitions.js';
@@ -26,7 +29,7 @@ export default class BattleEngine {
         id: entry.hero.id, name: entry.hero.name, heroClass: entry.hero.heroClass,
         affinity: entry.hero.affinity, range: entry.hero.range || 'melee',
         hp: boostedStats.hp, maxHp: boostedStats.hp,
-        stats: boostedStats, ultimateCharge: 0,
+        stats: boostedStats, ultimateCharge: 0, ultimateReadyNotified: false,
         abilityIds: entry.hero.normalAbilityIds || [],
         ultimateAbilityId: entry.hero.ultimateAbilityId,
         ultimateAbilityId2: entry.hero.ultimateAbilityId2 || null,
@@ -36,7 +39,14 @@ export default class BattleEngine {
     }
 
     for (const e of enemySquad) {
-      const combatant = { ...e, hp: e.stats.hp, maxHp: e.stats.hp, ultimateCharge: e.ultimateCharge || 0, isPlayer: false };
+      const combatant = {
+        ...e,
+        hp: e.stats.hp,
+        maxHp: e.stats.hp,
+        ultimateCharge: e.ultimateCharge || 0,
+        ultimateReadyNotified: false,
+        isPlayer: false
+      };
       this.enemyFormation[e.row].push(combatant);
     }
 
@@ -60,20 +70,28 @@ export default class BattleEngine {
 
     for (const c of this._allCombatants()) {
       if (c.hp <= 0) continue;
+      this._chargeUltimate(c, ULTIMATE_CHARGE.PASSIVE_PER_SECOND);
       const abilityId = c.abilityIds[this.tick % c.abilityIds.length];
       const ability = ABILITY_DEFINITIONS.find(a => a.id === abilityId);
       if (!ability) continue;
       const targets = this._selectTargets(c, ability);
       for (const target of targets) {
-        const dmg = this._calculateDamage(c, target, ability.scalingBase);
+        if (this._isHealingAbility(c, ability, target)) {
+          const heal = this._calculateHealing(c, ability);
+          this._heal(c, target, heal);
+          continue;
+        }
+        const dmg = this._calculateDamage(c, target, ability);
         this._dealDamage(c, target, dmg);
         if (ability.statusEffect) {
           StatusEffectManager.apply({ type: ability.statusEffect, targetId: target.id, duration: 2, magnitude: Math.floor(dmg * 0.3), sourceHeroId: c.id });
           this.onEvent({ type: 'statusApplied', targetId: target.id, effect: ability.statusEffect });
         }
       }
-      const chargeAmount = StatusEffectManager.hasEffect(c.id, STATUS_EFFECT.FREEZE) ? 0 : 15;
-      this._chargeUltimate(c, chargeAmount);
+      if (!StatusEffectManager.hasEffect(c.id, STATUS_EFFECT.FREEZE)) {
+        this._chargeAllies(c.isPlayer, ULTIMATE_CHARGE.ALLY_CAST_BONUS);
+      }
+      this._autoTriggerUltimateIfNeeded(c.id);
     }
 
     const result = this.checkBattleEnd();
@@ -86,47 +104,101 @@ export default class BattleEngine {
 
   triggerUltimate(heroId, slot = 'primary') {
     const c = this._findCombatant(heroId);
-    if (!c || c.ultimateCharge < 100) return false;
+    if (!c || c.ultimateCharge < ULTIMATE_CHARGE.COST) return false;
     const abilityId = slot === 'secondary' && c.ultimateAbilityId2 ? c.ultimateAbilityId2 : c.ultimateAbilityId;
     const ability = ABILITY_DEFINITIONS.find(a => a.id === abilityId);
     if (!ability) return false;
-    c.ultimateCharge = 0;
+    c.ultimateCharge = Math.max(0, c.ultimateCharge - ULTIMATE_CHARGE.COST);
     const targets = this._selectTargets(c, ability);
     for (const target of targets) {
-      const dmg = this._calculateDamage(c, target, ability.scalingBase * 2);
+      if (this._isHealingAbility(c, ability, target)) {
+        const heal = this._calculateHealing(c, ability);
+        this._heal(c, target, heal);
+        continue;
+      }
+      const dmg = this._calculateDamage(c, target, ability);
       this._dealDamage(c, target, dmg);
     }
+    c.ultimateReadyNotified = c.ultimateCharge >= ULTIMATE_CHARGE.READY;
     this.onEvent({ type: 'ultimateTriggered', heroId, abilityId, slot });
     return true;
   }
 
+  _chargeAllies(isPlayer, amount) {
+    const formation = isPlayer ? this.playerFormation : this.enemyFormation;
+    const allies = [...formation.FRONT, ...formation.BACK].filter(c => c.hp > 0);
+    for (const ally of allies) this._chargeUltimate(ally, amount);
+  }
+
   _chargeUltimate(combatant, amount) {
-    combatant.ultimateCharge = Math.min(100, combatant.ultimateCharge + amount);
-    if (combatant.ultimateCharge >= 100) {
+    if (amount <= 0) return;
+    const before = combatant.ultimateCharge;
+    combatant.ultimateCharge = Math.min(ULTIMATE_CHARGE.AUTO_TRIGGER, combatant.ultimateCharge + amount);
+    if (before < ULTIMATE_CHARGE.READY && combatant.ultimateCharge >= ULTIMATE_CHARGE.READY && !combatant.ultimateReadyNotified) {
+      combatant.ultimateReadyNotified = true;
       this.onEvent({ type: 'ultimateReady', id: combatant.id, slot: 'primary' });
       if (combatant.ultimateAbilityId2) this.onEvent({ type: 'ultimateReady', id: combatant.id, slot: 'secondary' });
     }
   }
 
-  _calculateDamage(attacker, target, scalingBase) {
+  _autoTriggerUltimateIfNeeded(heroId) {
+    const c = this._findCombatant(heroId);
+    if (!c || c.ultimateCharge < ULTIMATE_CHARGE.AUTO_TRIGGER) return;
+    this.triggerUltimate(heroId);
+    this.onEvent({ type: 'ultimateAutoTriggered', heroId });
+  }
+
+  _calculateDamage(attacker, target, ability) {
     const attackerDmg = attacker.stats?.damage || 0;
-    const abilityPowerMultiplier = Math.max(0.5, (scalingBase || 10) / 20);
+    const abilityPowerMultiplier = this._resolveAbilityPowerMultiplier(ability);
 
     let rawDamage = attackerDmg * abilityPowerMultiplier;
 
     const defenderDef = target.stats?.defense || 0;
-    let reducedDamage = rawDamage * (1 - (defenderDef / (defenderDef + 500)));
+    let reducedDamage = rawDamage * (1 - (defenderDef / (defenderDef + DAMAGE_FORMULA.defenseMitigationConstant)));
 
     const adv = AFFINITY_ADVANTAGES[attacker.affinity];
-    let affinityMultiplier = 1.0;
+    let affinityMultiplier = AFFINITY_DAMAGE_MULTIPLIER.NEUTRAL;
     if (adv) {
-      if (adv.strongVs === target.affinity) affinityMultiplier = 1.3;
-      else if (adv.weakVs === target.affinity) affinityMultiplier = 0.75;
+      if (adv.strongVs === target.affinity) affinityMultiplier = AFFINITY_DAMAGE_MULTIPLIER.STRONG;
+      else if (adv.weakVs === target.affinity) affinityMultiplier = AFFINITY_DAMAGE_MULTIPLIER.WEAK;
     }
 
     if (StatusEffectManager.hasEffect(attacker.id, STATUS_EFFECT.BLIND)) reducedDamage *= 0.5;
 
     return Math.max(1, Math.floor(reducedDamage * affinityMultiplier));
+  }
+
+  _calculateHealing(attacker, ability) {
+    const attackerDmg = attacker.stats?.damage || 0;
+    const multiplier = this._resolveAbilityPowerMultiplier(ability, true);
+    return Math.max(1, Math.floor(attackerDmg * multiplier));
+  }
+
+  _isHealingAbility(attacker, ability, target) {
+    return ability.abilityClass === CLASS.HEALER && attacker.isPlayer === target.isPlayer;
+  }
+
+  _resolveAbilityPowerMultiplier(ability, isHeal = false) {
+    const baseMultiplier = Math.max(0, (ability?.scalingBase || 10) / 20);
+    if (isHeal) {
+      return this._clamp(baseMultiplier, ABILITY_POWER_MULTIPLIER_RANGES.HEAL);
+    }
+    const isAoe = ability?.targetLogic === 'all_enemies';
+    const isUltimate = ability?.type === 'ultimate';
+    const range = isUltimate
+      ? (isAoe ? ABILITY_POWER_MULTIPLIER_RANGES.ULTIMATE_AOE : ABILITY_POWER_MULTIPLIER_RANGES.ULTIMATE_SINGLE)
+      : (isAoe ? ABILITY_POWER_MULTIPLIER_RANGES.NORMAL_AOE : ABILITY_POWER_MULTIPLIER_RANGES.NORMAL_SINGLE);
+    return this._clamp(baseMultiplier, range);
+  }
+
+  _clamp(value, range) {
+    return Math.min(range.max, Math.max(range.min, value));
+  }
+
+  _heal(healer, target, amount) {
+    target.hp = Math.min(target.maxHp, target.hp + amount);
+    this.onEvent({ type: 'heal', healerId: healer?.id || null, targetId: target.id, amount, finalHp: target.hp, maxHp: target.maxHp });
   }
 
   _dealDamage(attacker, target, amount) {
