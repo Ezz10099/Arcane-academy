@@ -5,6 +5,7 @@ import AchievementManager from '../systems/AchievementManager.js';
 import DailyCodexManager from '../systems/DailyCodexManager.js';
 import HERO_DEFINITIONS from '../data/heroDefinitions.js';
 import { CURRENCY, CURRENCY_LABEL } from '../data/constants.js';
+import { ARCANE_THEME, addArcaneBackdrop, createPanel, createArcaneButton } from '../ui/ArcaneUI.js';
 
 const RARITY_HEX = {
   COMMON: 0x888888, UNCOMMON: 0x44aa44, RARE: 0x4488ff,
@@ -45,7 +46,7 @@ export default class SummonScene extends Phaser.Scene {
     this._wishlistPage = 0;
     this._flashText    = null;
 
-    this.add.rectangle(W / 2, H / 2, W, H, 0x0a0a1a);
+    addArcaneBackdrop(this, W, H);
 
     // Persistent currency texts (top-right, depth above containers)
     this._crystalTxt  = this.add.text(W - 8, 10, '',
@@ -83,16 +84,17 @@ export default class SummonScene extends Phaser.Scene {
 
   _buildLocked() {
     const c = this._mainCont, W = this._W, H = this._H;
-    c.add(this.add.text(W / 2, H / 2,
+    c.add(createPanel(this, { x: W / 2, y: H / 2, width: 340, height: 170, title: 'LOCKED' }));
+    c.add(this.add.text(W / 2, H / 2 + 10,
       '\uD83D\uDD12 Summon\nClear Stage 1-5 to unlock',
-      { font: '18px monospace', fill: '#555577', align: 'center' }).setOrigin(0.5));
+      { font: '18px monospace', fill: ARCANE_THEME.colors.textMuted, align: 'center' }).setOrigin(0.5));
     this._addBack(c);
   }
 
   _buildHeader() {
     const c = this._mainCont, W = this._W;
     c.add(this.add.text(W / 2, 28, 'SUMMON',
-      { font: '22px monospace', fill: '#ffd700' }).setOrigin(0.5));
+      { font: '22px monospace', fill: ARCANE_THEME.colors.textPrimary }).setOrigin(0.5));
 
     const ratesBtn = this.add.text(460, 28, 'RATES ▶',
       { font: '11px monospace', fill: '#888888' })
@@ -105,46 +107,55 @@ export default class SummonScene extends Phaser.Scene {
   }
 
   _addBack(c) {
-    c.add(this.add.text(14, 28, '< BACK',
-      { font: '14px monospace', fill: '#aaaaaa' })
-      .setOrigin(0, 0.5).setInteractive({ useHandCursor: true })
-      .on('pointerup', () => this.scene.start('MainHub')));
+    const backButton = createArcaneButton(this, {
+      x: 58,
+      y: 28,
+      width: 96,
+      height: 34,
+      label: 'BACK',
+      font: '12px monospace',
+      onClick: () => this.scene.start('MainHub')
+    });
+    c.add(backButton.root);
   }
 
   _buildTabs() {
     const c = this._mainCont, W = this._W;
-    c.add(this.add.rectangle(W / 2, 56, W, 1, 0x222244));
+    c.add(this.add.rectangle(W / 2, 56, W, 1, 0x3e2956));
 
     ['BASIC', 'ADVANCED'].forEach((key, i) => {
       const bn      = BANNERS[key];
       const active  = this._activeBanner === key;
       const enabled = GameState.isUnlocked(bn.unlockKey);
-      const alpha   = enabled ? 1 : 0.38;
       const x       = 120 + i * 240;
       const tabLabel = enabled ? bn.label : bn.label + ' (locked)';
 
-      const bg = this.add.rectangle(x, 82, 210, 38, active ? 0x2a1055 : 0x101025)
-        .setStrokeStyle(1, active ? 0x8844ff : 0x333355)
-        .setAlpha(alpha)
-        .setInteractive({ useHandCursor: true });
-      c.add(bg);
-      c.add(this.add.text(x, 82, tabLabel,
-        { font: '12px monospace', fill: active ? '#cc88ff' : '#555577' })
-        .setOrigin(0.5).setAlpha(alpha));
-
-      if (enabled) {
-        bg.on('pointerup', () => {
+      const button = createArcaneButton(this, {
+        x,
+        y: 82,
+        width: 210,
+        height: 38,
+        label: tabLabel,
+        enabled,
+        accent: active ? ARCANE_THEME.colors.accent : ARCANE_THEME.colors.accentSoft,
+        fill: active ? 0x2a1148 : 0x150f24,
+        textColor: active ? '#e6c9ff' : ARCANE_THEME.colors.textMuted,
+        font: '12px monospace',
+        onClick: () => {
           this._activeBanner = key;
           this._lastResults  = [];
           this._wishlistPage = 0;
           this._build();
-        });
-      } else {
-        bg.on('pointerup', () => this._flashMsg('Clear Region 3 to unlock'));
+        }
+      });
+      c.add(button.root);
+
+      if (!enabled) {
+        button.root.on('pointerup', () => this._flashMsg('Clear Region 3 to unlock'));
       }
     });
 
-    c.add(this.add.rectangle(W / 2, 106, W, 1, 0x222244));
+    c.add(this.add.rectangle(W / 2, 106, W, 1, 0x3e2956));
   }
 
   _buildPityLine() {
@@ -154,7 +165,7 @@ export default class SummonScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, 120,
       `${bn.pityLabel}: ${n} / ${bn.pityMax}`,
       { font: '11px monospace', fill: '#776699' }).setOrigin(0.5));
-    c.add(this.add.rectangle(W / 2, 134, W, 1, 0x222244));
+    c.add(this.add.rectangle(W / 2, 134, W, 1, 0x3e2956));
   }
 
   _buildPullButtons() {
@@ -166,28 +177,23 @@ export default class SummonScene extends Phaser.Scene {
       { count: 1,  cost: bn.cost1,  x: W / 4,     label: 'PULL x1'  },
       { count: 10, cost: bn.cost10, x: W * 3 / 4, label: 'PULL x10' }
     ].forEach(({ count, cost, x, label }) => {
-      const can   = balance >= cost;
-      const alpha = can ? 1 : 0.4;
-      const bg    = this.add.rectangle(x, 170, 210, 68,
-        can ? 0x1a083a : 0x111120)
-        .setStrokeStyle(1, can ? 0x7744cc : 0x222233)
-        .setAlpha(alpha);
-      c.add(bg);
-      c.add(this.add.text(x, 158, label,
-        { font: '15px monospace', fill: can ? '#cc88ff' : '#333355' })
-        .setOrigin(0.5).setAlpha(alpha));
-      c.add(this.add.text(x, 178, `${cost} ${bn.currencyLabel}`,
-        { font: '11px monospace', fill: can ? '#8855bb' : '#2a2a3a' })
-        .setOrigin(0.5).setAlpha(alpha));
-      if (can) {
-        bg.setInteractive({ useHandCursor: true })
-          .on('pointerdown', () => bg.setFillStyle(0x0a0420))
-          .on('pointerout',  () => bg.setFillStyle(0x1a083a))
-          .on('pointerup',   () => this._doPull(bn, count));
-      }
+      const can = balance >= cost;
+      const button = createArcaneButton(this, {
+        x,
+        y: 170,
+        width: 210,
+        height: 68,
+        label: `${label}
+${cost} ${bn.currencyLabel}`,
+        enabled: can,
+        font: '14px monospace',
+        textColor: can ? '#e6c9ff' : ARCANE_THEME.colors.textMuted,
+        onClick: () => this._doPull(bn, count)
+      });
+      c.add(button.root);
     });
 
-    c.add(this.add.rectangle(W / 2, 210, W, 1, 0x222244));
+    c.add(this.add.rectangle(W / 2, 210, W, 1, 0x3e2956));
   }
 
   _buildResultsArea() {
@@ -242,17 +248,17 @@ export default class SummonScene extends Phaser.Scene {
     const c       = this._mainCont, W = this._W;
     const wlCount = SummonManager.wishlist.size;
     const wlMax   = SummonManager.getWishlistMaxSize();
-    c.add(this.add.rectangle(W / 2, 786, W, 1, 0x222244));
-    const bg = this.add.rectangle(W / 2, 815, 340, 50, 0x101030)
-      .setStrokeStyle(1, 0x4444aa)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => bg.setFillStyle(0x07071a))
-      .on('pointerout',  () => bg.setFillStyle(0x101030))
-      .on('pointerup',   () => this._showWishlistOverlay());
-    c.add(bg);
-    c.add(this.add.text(W / 2, 815,
-      `WISHLIST  (${wlCount}/${wlMax} active)`,
-      { font: '14px monospace', fill: '#8888cc' }).setOrigin(0.5));
+    c.add(this.add.rectangle(W / 2, 786, W, 1, 0x3e2956));
+    const button = createArcaneButton(this, {
+      x: W / 2,
+      y: 815,
+      width: 340,
+      height: 50,
+      label: `WISHLIST  (${wlCount}/${wlMax} active)`,
+      textColor: ARCANE_THEME.colors.textSecondary,
+      onClick: () => this._showWishlistOverlay()
+    });
+    c.add(button.root);
   }
 
   // ─── CURRENCY ─────────────────────────────────────────────────────────────────

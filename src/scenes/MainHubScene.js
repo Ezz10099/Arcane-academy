@@ -5,11 +5,10 @@ import AchievementManager from '../systems/AchievementManager.js';
 import LoginStreakManager from '../systems/LoginStreakManager.js';
 import DailyCodexManager from '../systems/DailyCodexManager.js';
 import { CURRENCY } from '../data/constants.js';
+import { ARCANE_THEME, addArcaneBackdrop, createPanel, createArcaneButton } from '../ui/ArcaneUI.js';
 
 const W = 480;
 const H = 854;
-const BTN_COLOR = 0x1a1a3a;
-const BTN_COLOR_DOWN = 0x0d0d1f;
 
 export default class MainHubScene extends Phaser.Scene {
   constructor() {
@@ -23,7 +22,7 @@ export default class MainHubScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.rectangle(W / 2, H / 2, W, H, 0x080818);
+    addArcaneBackdrop(this, W, H);
     this._drawHeader();
     this._drawIdleScene();
     this._drawCurrencyBar();
@@ -44,19 +43,18 @@ export default class MainHubScene extends Phaser.Scene {
   }
 
   _drawHeader() {
-    this.add.rectangle(W / 2, 34, W - 14, 52, 0x121230).setStrokeStyle(1, 0x2e2e5a);
+    createPanel(this, { x: W / 2, y: 34, width: W - 14, height: 52, fill: 0x120d24, withInner: false });
     this._makeIconButton({ x: 34, y: 34, label: '⚙', scene: 'Settings' });
     this._makeIconButton({ x: W - 34, y: 34, label: '👤', scene: 'Roster' });
     this.add.text(W / 2, 34, 'ARCANE ACADEMY', {
-      font: '20px monospace', fill: '#ffd66a'
+      font: '20px monospace', fill: ARCANE_THEME.colors.textPrimary
     }).setOrigin(0.5);
   }
 
   _drawIdleScene() {
-    this._artRect = this.add.rectangle(W / 2, 216, W - 24, 290, 0x10182a)
-      .setStrokeStyle(2, 0x2b4a6e);
+    this._artRect = createPanel(this, { x: W / 2, y: 216, width: W - 24, height: 290, fill: 0x100b1f, border: 0x73553b, withInner: true });
     this.add.text(W / 2, 95, 'ACADEMY COURTYARD', {
-      font: '14px monospace', fill: '#9ed7ff'
+      font: '14px monospace', fill: ARCANE_THEME.colors.textSecondary
     }).setOrigin(0.5);
     this.add.ellipse(W / 2, 216, 360, 180, 0x26425d, 0.55).setStrokeStyle(1, 0x4f83b8, 0.6);
     this._heroLayer = this.add.container(0, 0);
@@ -65,7 +63,7 @@ export default class MainHubScene extends Phaser.Scene {
 
   _drawCurrencyBar() {
     const y = 378;
-    this.add.rectangle(W / 2, y, W - 24, 88, 0x141428).setStrokeStyle(1, 0x36365a);
+    createPanel(this, { x: W / 2, y, width: W - 24, height: 88, fill: 0x130d22, border: 0x65492f, withInner: false });
     this._marksText = this.add.text(24, y - 27, '💛 Marks: 0', { font: '16px monospace', fill: '#ffe08a' });
     this._lumensText = this.add.text(250, y - 27, '✨ Lumens: 0', { font: '16px monospace', fill: '#dcb6ff' });
     this._etherText = this.add.text(24, y + 4, '🔵 Ether: 0', { font: '16px monospace', fill: '#8ed8ff' });
@@ -134,8 +132,8 @@ export default class MainHubScene extends Phaser.Scene {
     const x = W / 2;
     const y = 760;
     this._morePanel = this.add.container(0, 0).setVisible(false);
-    const bg = this.add.rectangle(x, y, W - 40, 160, 0x111125, 0.98).setStrokeStyle(1, 0x505088);
-    this._morePanel.add(bg);
+    const panel = createPanel(this, { x, y, width: W - 40, height: 160, fill: 0x140c23, border: 0x7f5b37 });
+    this._morePanel.add(panel);
 
     const items = [
       { label: 'Achievements', scene: 'Achievement' },
@@ -150,7 +148,7 @@ export default class MainHubScene extends Phaser.Scene {
       const tx = 66 + ((idx % 2) * 190);
       const ty = 704 + (Math.floor(idx / 2) * 44);
       const text = this.add.text(tx, ty, `• ${item.label}`, {
-        font: '16px monospace', fill: '#d9e0ff'
+        font: '16px monospace', fill: ARCANE_THEME.colors.textSecondary
       }).setInteractive({ useHandCursor: true });
       text.on('pointerup', () => this.scene.start(item.scene, item.data));
       this._morePanel.add(text);
@@ -186,15 +184,16 @@ export default class MainHubScene extends Phaser.Scene {
   }
 
   _makeIconButton({ x, y, label, scene }) {
-    const bg = this.add.circle(x, y, 16, 0x1a1a3a).setStrokeStyle(1, 0x4f4f92);
-    this.add.text(x, y, label, { font: '16px sans-serif', fill: '#ffffff' }).setOrigin(0.5);
-    bg.setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => bg.setFillStyle(BTN_COLOR_DOWN))
-      .on('pointerup', () => {
-        bg.setFillStyle(BTN_COLOR);
-        this.scene.start(scene);
-      })
-      .on('pointerout', () => bg.setFillStyle(BTN_COLOR));
+    const { root } = createArcaneButton(this, {
+      x,
+      y,
+      width: 36,
+      height: 36,
+      label,
+      font: '16px sans-serif',
+      onClick: () => this.scene.start(scene)
+    });
+    return root;
   }
 
   _makeNavButton({ x, y, width, height, label, scene, onClick }) {
@@ -210,27 +209,23 @@ export default class MainHubScene extends Phaser.Scene {
     const isUnlocked = !unlockKey || GameState.isUnlocked(unlockKey);
     const active = sceneExists && isUnlocked;
 
-    const bg = this.add.rectangle(x, y, width, height, BTN_COLOR)
-      .setStrokeStyle(1, active ? 0x3f4f81 : 0x2f2f2f)
-      .setAlpha(active ? 1 : 0.45);
-    this.add.text(x, y, label, {
-      font: `${label.length > 11 ? 14 : 16}px monospace`,
-      fill: '#ffffff'
-    }).setOrigin(0.5).setAlpha(active ? 1 : 0.55);
-
-    const dot = this.add.circle(x + (width / 2) - 12, y - (height / 2) + 10, 5, 0xff3040).setVisible(false);
-
-    if (!active) return { bg, dot };
-    bg.setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => bg.setFillStyle(BTN_COLOR_DOWN))
-      .on('pointerup', () => {
-        bg.setFillStyle(BTN_COLOR);
+    const button = createArcaneButton(this, {
+      x,
+      y,
+      width,
+      height,
+      label,
+      enabled: active,
+      textColor: active ? ARCANE_THEME.colors.textPrimary : ARCANE_THEME.colors.textMuted,
+      onClick: () => {
         if (onClick) onClick();
         else if (scene) this.scene.start(scene);
-      })
-      .on('pointerout', () => bg.setFillStyle(BTN_COLOR));
+      }
+    });
 
-    return { bg, dot };
+    const dot = this.add.circle(x + (width / 2) - 12, y - (height / 2) + 10, 5, ARCANE_THEME.colors.danger).setVisible(false);
+
+    return { bg: button.outer, dot };
   }
 
   _toggleMoreMenu() {
