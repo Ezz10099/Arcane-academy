@@ -1,13 +1,22 @@
 import CurrencyManager from '../systems/CurrencyManager.js';
 import GameState from '../systems/GameState.js';
+import HeroManager, { HeroInstance } from '../systems/HeroManager.js';
+import HERO_DEFINITIONS from '../data/heroDefinitions.js';
 import { CURRENCY } from '../data/constants.js';
 
 const SHOP_ITEMS = [
   {
-    id: 'cosmetic_banner',
-    name: 'Arcane Banner',
-    desc: 'Cosmetic arena title (stub)',
-    cost: 200,
+    id: 'hero_arena_valtora',
+    name: 'Valtora Duelcrest',
+    desc: 'Exclusive Arena Hero (EPIC)',
+    cost: 1200,
+    color: '#ffcc66',
+  },
+  {
+    id: 'hero_arena_nox',
+    name: 'Nox Chainveil',
+    desc: 'Exclusive Arena Hero (EPIC)',
+    cost: 1200,
     color: '#cc88ff',
   },
   {
@@ -50,7 +59,7 @@ export default class ArenaShopScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, 82, tokens + ' Arena Tokens', {
       font: '16px monospace', fill: '#ffaa44',
     }).setOrigin(0.5));
-    c.add(this.add.text(W / 2, 112, 'ITEMS FOR SALE', {
+    c.add(this.add.text(W / 2, 112, 'EXCLUSIVE HEROES + MATERIALS', {
       font: '13px monospace', fill: '#886699',
     }).setOrigin(0.5));
 
@@ -62,11 +71,12 @@ export default class ArenaShopScene extends Phaser.Scene {
       c.add(this.add.text(28, iy - 8,  item.desc, { font: '12px monospace', fill: '#888888' }));
       c.add(this.add.text(28, iy + 18, item.cost + ' Tokens', { font: '13px monospace', fill: '#ffaa44' }));
 
-      const canAfford = tokens >= item.cost;
+      const alreadyOwned = item.id.startsWith('hero_') && HeroManager.getAllHeroes().some(h => h.heroDefId === item.id);
+      const canAfford = tokens >= item.cost && !alreadyOwned;
       const buyBtn = this.add.rectangle(W - 66, iy, 84, 44, canAfford ? 0x1a0a00 : 0x111111)
         .setStrokeStyle(1, canAfford ? 0xffaa44 : 0x333333).setInteractive({ useHandCursor: true });
       c.add(buyBtn);
-      c.add(this.add.text(W - 66, iy, 'BUY', {
+      c.add(this.add.text(W - 66, iy, alreadyOwned ? 'OWNED' : 'BUY', {
         font: '15px monospace', fill: canAfford ? '#ffaa44' : '#444444',
       }).setOrigin(0.5));
 
@@ -80,6 +90,17 @@ export default class ArenaShopScene extends Phaser.Scene {
 
   _buyItem(item) {
     if (!CurrencyManager.spend(CURRENCY.ARENA_TOKENS, item.cost)) return;
+    if (item.id.startsWith('hero_')) {
+      const def = HERO_DEFINITIONS.find(h => h.id === item.id);
+      if (def && !HeroManager.getAllHeroes().some(h => h.heroDefId === def.id)) {
+        HeroManager.addHero(new HeroInstance({
+          heroDefId: def.id, name: def.name, title: def.title || null,
+          heroClass: def.heroClass, affinity: def.affinity, rarity: def.rarity, originRarity: def.rarity,
+          baseStats: def.baseStats, normalAbilityIds: def.normalAbilityIds,
+          ultimateAbilityId: def.ultimateAbilityId, ultimateAbilityId2: def.ultimateAbilityId2 || null
+        }));
+      }
+    }
     if (item.id === 'hero_shard_pack')   CurrencyManager.add(CURRENCY.AWAKENING_SHARDS, 50);
     if (item.id === 'rare_crystal_pack') CurrencyManager.add(CURRENCY.CRYSTALS, 100);
     GameState.save();

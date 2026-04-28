@@ -94,10 +94,10 @@ export default class AffinityTowerScene extends Phaser.Scene {
       }).setOrigin(0.5));
     }
 
-    // Leaderboard stub
+    const top = AffinityTowerManager.getLeaderboard(aff)[0];
     c.add(this.add.text(W / 2, 174,
-      best > 0 ? 'Your highest: Floor ' + best : 'Not yet climbed',
-      { font: '13px monospace', fill: '#666688' }
+      `Top: ${top?.name || 'You'} F${top?.floor || best}  |  You F${best || 0}`,
+      { font: '13px monospace', fill: '#8888aa' }
     ).setOrigin(0.5));
 
     // Affinity bonus indicator

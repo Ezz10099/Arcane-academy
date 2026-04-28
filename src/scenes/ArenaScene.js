@@ -81,6 +81,9 @@ export default class ArenaScene extends Phaser.Scene {
     c.add(this.add.text(W / 2, 164, `SQUAD ${squadEntries.length}/5: ${(squadNames.join(', ') || 'none').slice(0, 48)}`, {
       font: '10px monospace', fill: '#99ccff',
     }).setOrigin(0.5));
+    c.add(this.add.text(W / 2, 180, 'Arena uses a frozen squad snapshot at fight start', {
+      font: '9px monospace', fill: '#667799',
+    }).setOrigin(0.5));
 
     let nextY = 194;
 
@@ -153,12 +156,22 @@ export default class ArenaScene extends Phaser.Scene {
     if (!ArenaManager.canAttempt()) return;
     this._selectedOpponent = opponent;
 
-    const playerSquad = GameState.getBattleSquadEntries()
-      .map(entry => {
-        const hero = HeroManager.getHero(entry.heroId);
-        return hero ? { hero, row: entry.row } : null;
-      })
-      .filter(Boolean);
+    const frozen = ArenaManager.freezeSquadFromEntries(GameState.getBattleSquadEntries(), id => HeroManager.getHero(id));
+    const playerSquad = frozen
+      .map(snapshot => {
+        const combatHero = {
+          id: snapshot.id,
+          name: snapshot.name,
+          heroClass: snapshot.heroClass,
+          affinity: snapshot.affinity,
+          range: snapshot.range,
+          normalAbilityIds: snapshot.abilityIds,
+          ultimateAbilityId: snapshot.ultimateAbilityId,
+          ultimateAbilityId2: snapshot.ultimateAbilityId2,
+          computeStats: () => ({ ...snapshot.stats })
+        };
+        return { hero: combatHero, row: snapshot.row };
+      });
 
     this._engine = new BattleEngine({
       playerSquad,

@@ -1,6 +1,6 @@
 import {
   RARITY_CONFIG, RARITY_ORDER, ASCENSION_CEILING, CURRENCY,
-  CLASS_BASE_STATS, RARITY_STAT_MULTIPLIER, LEVEL_STAT_GROWTH, STAR_STAT_BONUS_PER_STAR
+  CLASS_BASE_STATS, RARITY_STAT_MULTIPLIER, LEVEL_STAT_GROWTH, STAR_STAT_BONUS_PER_STAR, TITLE_AFFINITY_BONUS
 } from '../data/constants.js';
 import CurrencyManager from './CurrencyManager.js';
 import AchievementManager from './AchievementManager.js';
@@ -45,12 +45,12 @@ class HeroInstance {
     const levelDmg   = baseDmg * ((1 + LEVEL_STAT_GROWTH.damage) ** levelStep);
 
     const starMult   = 1 + (Math.max(1, this.stars) - 1) * STAR_STAT_BONUS_PER_STAR;
-    const titleBonus = this.title ? 1.05 : 1.0;
+    const titleBonus = this.title ? (TITLE_AFFINITY_BONUS[this.affinity] || { hp: 1.03, defense: 1.03, damage: 1.03 }) : null;
 
     return {
-      hp:      Math.floor(levelHp * starMult * titleBonus),
-      defense: Math.floor(levelDef * starMult * titleBonus),
-      damage:  Math.floor(levelDmg * starMult * titleBonus)
+      hp:      Math.floor(levelHp * starMult * (titleBonus?.hp || 1)),
+      defense: Math.floor(levelDef * starMult * (titleBonus?.defense || 1)),
+      damage:  Math.floor(levelDmg * starMult * (titleBonus?.damage || 1))
     };
   }
 

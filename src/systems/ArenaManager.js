@@ -28,6 +28,7 @@ const ArenaManager = {
   battleHistory: [],
   _cachedOpponents: null,
   _cachedForRank: -1,
+  frozenSquad: null,
 
   _todayStr() {
     return new Date().toISOString().slice(0, 10);
@@ -102,6 +103,35 @@ const ArenaManager = {
     return opponents;
   },
 
+  freezeSquadFromEntries(squadEntries, heroLookupFn) {
+    const lookup = heroLookupFn || (() => null);
+    const frozen = [];
+    for (const entry of squadEntries || []) {
+      const hero = lookup(entry.heroId);
+      if (!hero) continue;
+      const stats = hero.computeStats();
+      frozen.push({
+        id: `arena_player_${hero.id}`,
+        name: hero.name,
+        heroClass: hero.heroClass,
+        affinity: hero.affinity,
+        range: entry.row === 'BACK' ? 'ranged' : 'melee',
+        row: entry.row,
+        stats,
+        abilityIds: hero.normalAbilityIds,
+        ultimateAbilityId: hero.ultimateAbilityId,
+        ultimateAbilityId2: hero.ultimateAbilityId2 || null,
+        ultimateCharge: 0,
+      });
+    }
+    this.frozenSquad = frozen;
+    return frozen;
+  },
+
+  getFrozenSquad() {
+    return this.frozenSquad ? this.frozenSquad.map(c => ({ ...c, stats: { ...c.stats } })) : null;
+  },
+
   _generateSquad(rankIndex, oppIndex) {
     const mult = Object.values(RANK_CONFIG)[rankIndex].statMult;
     const heroCount = 2 + Math.floor(Math.random() * 2);
@@ -163,6 +193,7 @@ const ArenaManager = {
       attemptsRemaining: this.attemptsRemaining,
       lastResetDate:     this.lastResetDate,
       battleHistory:     this.battleHistory,
+      frozenSquad:       this.frozenSquad,
     };
   },
 
@@ -172,6 +203,7 @@ const ArenaManager = {
     this.attemptsRemaining = data.attemptsRemaining ?? MAX_ATTEMPTS;
     this.lastResetDate     = data.lastResetDate     || null;
     this.battleHistory     = data.battleHistory     || [];
+    this.frozenSquad       = data.frozenSquad       || null;
   },
 };
 

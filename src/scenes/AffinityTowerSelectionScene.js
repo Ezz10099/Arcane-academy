@@ -58,9 +58,9 @@ export default class AffinityTowerSelectionScene extends Phaser.Scene {
       font: '12px monospace', fill: '#bbbbbb'
     }).setOrigin(0, 0.5);
 
-    // Leaderboard stub
-    this.add.text(60, y + 20, 'Your highest: Floor ' + highest, {
-      font: '11px monospace', fill: '#666666'
+    const top = AffinityTowerManager.getLeaderboard(affinity)[0];
+    this.add.text(60, y + 20, `Leaderboard: ${top.name} F${top.floor}  |  You F${highest}`, {
+      font: '11px monospace', fill: '#8888aa'
     }).setOrigin(0, 0.5);
 
     // ENTER button

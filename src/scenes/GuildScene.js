@@ -99,6 +99,26 @@ export default class GuildScene extends Phaser.Scene {
       c.add(jBg);
       c.add(this.add.text(W - 70, gy, 'JOIN', { font: '15px monospace', fill: '#44aa44' }).setOrigin(0.5));
     });
+
+    const closedBaseY = 285 + GuildManager.getOpenGuilds().length * 100 + 12;
+    c.add(this.add.text(W / 2, closedBaseY, 'Closed Guilds (approval required)', {
+      font: '11px monospace', fill: '#aa88cc'
+    }).setOrigin(0.5));
+    GuildManager.getClosedGuilds().forEach((g, i) => {
+      const gy = closedBaseY + 48 + i * 84;
+      const bg = this.add.rectangle(W / 2, gy, W - 40, 72, 0x120d22).setStrokeStyle(1, 0x5a3a7a);
+      c.add(bg);
+      c.add(this.add.text(70, gy - 14, g.name, { font: '14px monospace', fill: '#d0b0ff' }));
+      c.add(this.add.text(70, gy + 8, `Level ${g.level} • Members: ${g.memberCount}/30`, { font: '11px monospace', fill: '#9999bb' }));
+      const rBg = this.add.rectangle(W - 70, gy, 84, 34, 0x1a0f2a).setStrokeStyle(1, 0xaa66ff)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerup', () => {
+          const res = GuildManager.requestJoinClosedGuild(g.name, g.level, g.memberCount);
+          window.alert(res.reason);
+        });
+      c.add(rBg);
+      c.add(this.add.text(W - 70, gy, 'REQUEST', { font: '10px monospace', fill: '#cc99ff' }).setOrigin(0.5));
+    });
   }
 
   _promptCreate() {
@@ -200,6 +220,21 @@ export default class GuildScene extends Phaser.Scene {
       c.add(this.add.text(W / 2, 364,
         'Last: ' + lr.damage.toLocaleString() + ' dmg  \u2605' + lr.coinsEarned + ' Coins  +' + lr.xpGained + ' XP',
         { font: '11px monospace', fill: '#555577' }).setOrigin(0.5));
+    }
+    if (bs.pendingDailyPayout) {
+      const payout = bs.pendingDailyPayout;
+      c.add(this.add.text(W / 2, 382,
+        `Daily contribution payout ready: ★${payout.coins} (${Math.round(payout.contribution * 100)}%)`,
+        { font: '10px monospace', fill: '#99ff99' }).setOrigin(0.5));
+      const claim = this.add.rectangle(W / 2, 400, 220, 20, 0x0d2a0d).setStrokeStyle(1, 0x44cc44)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerup', () => {
+          GuildManager.claimDailyContributionPayout();
+          GameState.save();
+          this._showGuildHub();
+        });
+      c.add(claim);
+      c.add(this.add.text(W / 2, 400, 'CLAIM DAILY PAYOUT', { font: '10px monospace', fill: '#88ff88' }).setOrigin(0.5));
     }
 
     // Attack button
