@@ -235,6 +235,34 @@ const HERO_DEFINITIONS = [
     ultimateAbilityNames: ['Starfall', 'Arcane Rift'],
     bondIds: ['bond_founders_bond'],
     notes: 'First Legendary in summon pool. Guaranteed in the Newcomer Banner.'
+  },
+  {
+    id: 'hero_arena_valtora',
+    name: 'Valtora Duelcrest',
+    title: 'the Unyielding',
+    epithet: 'Champion of a hundred duels.',
+    heroClass: 'WARRIOR',
+    affinity: 'LIGHT',
+    rarity: 'EPIC',
+    baseStats: { hp: 148, defense: 30, damage: 36 },
+    normalAbilityIds: ['wa_slash', 'wa_shield_bash', 'aff_light_burst'],
+    ultimateAbilityId: 'wa_berserker_surge',
+    bondIds: [],
+    source: 'ARENA_SHOP'
+  },
+  {
+    id: 'hero_arena_nox',
+    name: 'Nox Chainveil',
+    title: 'the Pitshade',
+    epithet: 'She fights where light fails.',
+    heroClass: 'ASSASSIN',
+    affinity: 'SHADOW',
+    rarity: 'EPIC',
+    baseStats: { hp: 96, defense: 18, damage: 61 },
+    normalAbilityIds: ['as_shadow_step', 'as_rupture', 'aff_shadow_veil'],
+    ultimateAbilityId: 'as_death_mark',
+    bondIds: [],
+    source: 'ARENA_SHOP'
   }
 ];
 

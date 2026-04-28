@@ -5,8 +5,8 @@
 
 const REGION_SCHEDULE = [
   { region: 1, name: 'The Academy Grounds',      stages: 12, unlockSystem: 'BASIC_SUMMON' },
-  { region: 2, name: 'The Shattered Lowlands',   stages: 15, unlockSystem: 'ADVANCED_SUMMON' },
-  { region: 3, name: 'The Thornwood',            stages: 15, unlockSystem: 'AFFINITY_TOWERS' },
+  { region: 2, name: 'The Shattered Lowlands',   stages: 15, unlockSystem: 'ARENA' },
+  { region: 3, name: 'The Thornwood',            stages: 15, unlockSystem: 'ADVANCED_SUMMON' },
   { region: 4, name: 'The Ashen Expanse',        stages: 18, unlockSystem: 'WORLD_BOSS_HARD_TIER' },
   { region: 5, name: 'The Veilspire',            stages: 20, unlockSystem: 'FULL_ENDLESS_CONTENT' }
 ];
@@ -109,9 +109,10 @@ const STAGE_DEFINITIONS = REGION_SCHEDULE.flatMap(regionCfg => {
         hint: `${regionCfg.unlockSystem.replaceAll('_', ' ')} unlocked!`
       });
       if (regionCfg.region === 2) {
-        generated.milestoneRewards.push({ type: 'unlockSystem', system: 'ARENA', hint: 'Arena unlocked!' });
+        // Arena unlock handled as region unlockSystem.
       }
       if (regionCfg.region === 3) {
+        generated.milestoneRewards.push({ type: 'unlockSystem', system: 'AFFINITY_TOWERS', hint: 'Affinity Towers unlocked!' });
         generated.milestoneRewards.push({ type: 'unlockSystem', system: 'GUILD', hint: 'Guild unlocked!' });
       }
     }

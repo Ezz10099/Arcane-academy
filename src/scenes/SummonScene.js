@@ -19,6 +19,7 @@ const BANNER_POOLS = {
   BASIC:    ['COMMON', 'UNCOMMON', 'RARE', 'EPIC'],
   ADVANCED: ['RARE', 'EPIC', 'LEGENDARY']
 };
+const SUMMONABLE_HERO_DEFINITIONS = HERO_DEFINITIONS.filter(d => d.source !== 'ARENA_SHOP');
 
 const BANNERS = {
   BASIC: {
@@ -139,7 +140,7 @@ export default class SummonScene extends Phaser.Scene {
           this._build();
         });
       } else {
-        bg.on('pointerup', () => this._flashMsg('Clear Region 2 to unlock'));
+        bg.on('pointerup', () => this._flashMsg('Clear Region 3 to unlock'));
       }
     });
 
@@ -271,8 +272,8 @@ export default class SummonScene extends Phaser.Scene {
     const cost = count === 1 ? bn.cost1 : bn.cost10;
     if (!CurrencyManager.spend(bn.currency, cost)) return;
     const results = count === 1
-      ? [SummonManager.pull(bn.key, HERO_DEFINITIONS)].filter(Boolean)
-      : SummonManager.pullMulti(bn.key, HERO_DEFINITIONS, count);
+      ? [SummonManager.pull(bn.key, SUMMONABLE_HERO_DEFINITIONS)].filter(Boolean)
+      : SummonManager.pullMulti(bn.key, SUMMONABLE_HERO_DEFINITIONS, count);
     results.forEach(r => SummonManager.handleResult(r));
     DailyCodexManager.increment('SUMMON_HERO');
     GameState.save();
@@ -341,7 +342,7 @@ export default class SummonScene extends Phaser.Scene {
     const W = this._W, H = this._H;
 
     const pool   = BANNER_POOLS[this._activeBanner];
-    const heroes = HERO_DEFINITIONS.filter(d => pool.includes(d.rarity));
+    const heroes = SUMMONABLE_HERO_DEFINITIONS.filter(d => pool.includes(d.rarity));
     const PAGE   = 10;
     const page   = this._wishlistPage;
     const slice  = heroes.slice(page * PAGE, page * PAGE + PAGE);

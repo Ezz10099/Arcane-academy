@@ -51,11 +51,19 @@ export const RARITY_CONFIG = Object.freeze({
 });
 
 export const AFFINITY_ADVANTAGES = Object.freeze({
-  FIRE:   { strongVs: 'ICE',    weakVs: 'LIGHT',  statusEffect: 'BURNING' },
-  ICE:    { strongVs: 'EARTH',  weakVs: 'FIRE',   statusEffect: 'FREEZE'  },
-  EARTH:  { strongVs: 'SHADOW', weakVs: 'ICE',    statusEffect: 'ROOT'    },
-  SHADOW: { strongVs: 'LIGHT',  weakVs: 'EARTH',  statusEffect: 'BLIND'   },
-  LIGHT:  { strongVs: 'FIRE',   weakVs: 'SHADOW', statusEffect: 'BLIND'   }
+  FIRE:   { strongVs: 'EARTH',  weakVs: 'ICE',    statusEffect: 'BURNING' },
+  ICE:    { strongVs: 'FIRE',   weakVs: 'EARTH',  statusEffect: 'FREEZE'  },
+  EARTH:  { strongVs: 'ICE',    weakVs: 'FIRE',   statusEffect: 'ROOT'    },
+  SHADOW: { strongVs: 'LIGHT',  weakVs: 'LIGHT',  statusEffect: 'BLIND'   },
+  LIGHT:  { strongVs: 'SHADOW', weakVs: 'SHADOW', statusEffect: 'BLIND'   }
+});
+
+export const TITLE_AFFINITY_BONUS = Object.freeze({
+  FIRE:   { hp: 1.00, defense: 1.00, damage: 1.07 },
+  ICE:    { hp: 1.00, defense: 1.07, damage: 1.00 },
+  EARTH:  { hp: 1.07, defense: 1.00, damage: 1.00 },
+  SHADOW: { hp: 1.00, defense: 1.03, damage: 1.04 },
+  LIGHT:  { hp: 1.03, defense: 1.04, damage: 1.00 }
 });
 
 
@@ -134,6 +142,7 @@ export const ASCENSION_CEILING = Object.freeze({
 export default {
   CLASS, AFFINITY, RARITY, RARITY_ORDER, GEAR_SLOT, CURRENCY,
   CURRENCY_LABEL, STATUS_EFFECT, FORMATION_ROW, RARITY_CONFIG, AFFINITY_ADVANTAGES,
+  TITLE_AFFINITY_BONUS,
   CLASS_BASE_STATS, RARITY_STAT_MULTIPLIER, LEVEL_STAT_GROWTH, STAR_STAT_BONUS_PER_STAR,
   DAMAGE_FORMULA, AFFINITY_DAMAGE_MULTIPLIER, ABILITY_POWER_MULTIPLIER_RANGES,
   ULTIMATE_CHARGE, CLASS_DEFAULTS, ASCENSION_CEILING

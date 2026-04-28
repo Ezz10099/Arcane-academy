@@ -158,10 +158,18 @@ const SummonManager = {
     if (!result) return;
     const { heroDefId, rarity, isNew, def } = result;
     if (!isNew) {
+      const existing = HeroManager.getAllHeroes().find(h => h.heroDefId === heroDefId);
+      if (existing?.rarity === RARITY.LEGENDARY && rarity === RARITY.LEGENDARY) {
+        existing.rarity = RARITY.MYTHIC;
+        return;
+      }
+      if (existing?.rarity === RARITY.MYTHIC && rarity === RARITY.LEGENDARY) {
+        existing.rarity = RARITY.ASCENDED;
+        return;
+      }
       const baseShards = SHARD_VALUES[rarity] || 1;
       const shards = Math.floor(baseShards * (1 + ElderTreeManager.getShardBonus()));
       CurrencyManager.add(CURRENCY.AWAKENING_SHARDS, shards);
-      const existing = HeroManager.getAllHeroes().find(h => h.heroDefId === heroDefId);
       if (existing) existing.awakeningShards += shards;
     } else {
       const hero = new HeroInstance({

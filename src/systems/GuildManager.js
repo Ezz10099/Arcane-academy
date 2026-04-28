@@ -65,9 +65,14 @@ const OPEN_GUILDS = [
   { name: 'Iron Phoenix',    level: 3,  memberCount: 8  },
   { name: 'Ember Watch',     level: 6,  memberCount: 20 },
 ];
+const CLOSED_GUILDS = [
+  { name: 'Eclipse Senate', level: 14, memberCount: 28 },
+  { name: 'Ivory Tribunal', level: 9, memberCount: 19 }
+];
 
 const GuildManager = {
   guild: null,
+  joinRequests: [],
   bossState: {
     currentHp:     BOSS_TIERS[0].bossHp,
     tierIndex:     0,
@@ -75,6 +80,9 @@ const GuildManager = {
     lastAttackAt:  0,
     lastResetDate: null,
     lastResult:    null,
+    totalDamageToday: 0,
+    playerDamageToday: 0,
+    pendingDailyPayout: null
   },
 
   _todayStr() { return new Date().toISOString().slice(0, 10); },
@@ -82,8 +90,15 @@ const GuildManager = {
   _checkDailyReset() {
     const today = this._todayStr();
     if (this.bossState.lastResetDate !== today) {
+      if (this.bossState.totalDamageToday > 0 && this.bossState.playerDamageToday > 0) {
+        const contribution = this.bossState.playerDamageToday / this.bossState.totalDamageToday;
+        const coins = Math.max(1, Math.floor(200 * this.getCurrentTierConfig().tier * contribution));
+        this.bossState.pendingDailyPayout = { coins, contribution };
+      }
       this.bossState.attacksUsed = 0;
       this.bossState.lastAttackAt = 0;
+      this.bossState.totalDamageToday = 0;
+      this.bossState.playerDamageToday = 0;
       this.bossState.lastResetDate = today;
     }
   },
@@ -91,6 +106,13 @@ const GuildManager = {
   hasGuild() { return this.guild !== null; },
 
   getOpenGuilds() { return OPEN_GUILDS; },
+  getClosedGuilds() { return CLOSED_GUILDS; },
+
+  requestJoinClosedGuild(guildName, level, memberCount) {
+    if (this.guild) return { ok: false, reason: 'Already in a guild' };
+    this.joinRequests.push({ guildName, level, memberCount, at: Date.now() });
+    return { ok: true, reason: 'Request sent to guild leader for approval' };
+  },
 
   createGuild(name) {
     if (this.guild) return { ok: false, reason: 'Already in a guild' };
@@ -196,6 +218,15 @@ const GuildManager = {
     }];
   },
 
+  claimDailyContributionPayout() {
+    this._checkDailyReset();
+    const payout = this.bossState.pendingDailyPayout;
+    if (!payout) return null;
+    CurrencyManager.add(CURRENCY.GUILD_COINS, payout.coins);
+    this.bossState.pendingDailyPayout = null;
+    return payout;
+  },
+
   recordAttack(rawDamage) {
     this._checkDailyReset();
     this.bossState.attacksUsed = Math.min(this.getMaxAttacksPerDay(), this.bossState.attacksUsed + 1);
@@ -205,6 +236,8 @@ const GuildManager = {
     const damage = Math.min(rawDamage, cfg.battleHp);
 
     this.bossState.currentHp = Math.max(0, this.bossState.currentHp - damage);
+    this.bossState.totalDamageToday += damage;
+    this.bossState.playerDamageToday += damage;
 
     const bossDefeated = this.bossState.currentHp <= 0;
     let tierAdvanced   = false;
@@ -240,7 +273,11 @@ const GuildManager = {
         lastAttackAt:  this.bossState.lastAttackAt,
         lastResetDate: this.bossState.lastResetDate,
         lastResult:    this.bossState.lastResult,
+        totalDamageToday: this.bossState.totalDamageToday,
+        playerDamageToday: this.bossState.playerDamageToday,
+        pendingDailyPayout: this.bossState.pendingDailyPayout,
       },
+      joinRequests: this.joinRequests,
     };
   },
 
@@ -261,8 +298,12 @@ const GuildManager = {
         lastAttackAt:  data.bossState.lastAttackAt   ?? 0,
         lastResetDate: data.bossState.lastResetDate  ?? null,
         lastResult:    data.bossState.lastResult     ?? null,
+        totalDamageToday: data.bossState.totalDamageToday ?? 0,
+        playerDamageToday: data.bossState.playerDamageToday ?? 0,
+        pendingDailyPayout: data.bossState.pendingDailyPayout ?? null,
       };
     }
+    this.joinRequests = data.joinRequests || [];
   },
 };
 

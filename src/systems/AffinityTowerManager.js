@@ -30,6 +30,9 @@ const AffinityTowerManager = {
     SHADOW: _defaultTower(),
     LIGHT:  _defaultTower(),
   },
+  leaderboard: {
+    FIRE: [], ICE: [], EARTH: [], SHADOW: [], LIGHT: []
+  },
 
   getTower(affinity) {
     return this.towers[affinity];
@@ -125,6 +128,20 @@ const AffinityTowerManager = {
       tower.milestonesClaimed.push(floor);
       this._grantMilestoneHero(floor);
     }
+    this._updateLeaderboard(affinity, floor);
+  },
+
+  _updateLeaderboard(affinity, floor) {
+    const seeds = ['Astra', 'Rune', 'Nyx', 'Kael', 'Vera', 'Mira', 'Orin'];
+    const bots = seeds.map((name, i) => ({ name, floor: Math.max(1, floor - (i + 1) * 3) }));
+    const board = [{ name: 'You', floor }, ...bots].sort((a, b) => b.floor - a.floor).slice(0, 8);
+    this.leaderboard[affinity] = board;
+  },
+
+  getLeaderboard(affinity) {
+    const board = this.leaderboard[affinity];
+    if (!board || !board.length) this._updateLeaderboard(affinity, this.getTower(affinity).highestFloor || 1);
+    return this.leaderboard[affinity];
   },
 
   _grantMilestoneHero(floor) {
@@ -155,7 +172,7 @@ const AffinityTowerManager = {
         milestonesClaimed: [...t.milestonesClaimed],
       };
     }
-    return { towers };
+    return { towers, leaderboard: this.leaderboard };
   },
 
   fromJSON(data) {
@@ -169,6 +186,9 @@ const AffinityTowerManager = {
           lastReward:        d.lastReward        || null,
           milestonesClaimed: d.milestonesClaimed || [],
         };
+      }
+      if (data.leaderboard?.[aff]) {
+        this.leaderboard[aff] = data.leaderboard[aff];
       }
     }
   },
