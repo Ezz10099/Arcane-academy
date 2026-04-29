@@ -1,6 +1,7 @@
 import CurrencyManager from './CurrencyManager.js';
 import { CURRENCY } from '../data/constants.js';
 import GuildManager from './GuildManager.js';
+import GearManager, { GearInstance } from './GearManager.js';
 
 const GEAR_POOL = [
   { id: 'gs_iron_sword',     name: 'Iron Sword',       type: 'gear', slot: 'WEAPON',    rarity: 'COMMON',    desc: '+15 DMG',           cost: 80,   rarityColor: '#aaaaaa' },
@@ -72,6 +73,7 @@ function generateDailyRotation(daySeed) {
 
 const GuildShopManager = {
   purchasedToday: [],
+  ownedCosmetics: [],
   lastShopDate:   null, // tracks current rotation key (day or half-day)
 
   _rotationKey() {
@@ -97,7 +99,7 @@ const GuildShopManager = {
   getItems() {
     this._checkDailyReset();
     return this.getRotation().map(item =>
-      Object.assign({}, item, { purchased: this.purchasedToday.includes(item.id) })
+      Object.assign({}, item, { purchased: this.purchasedToday.includes(item.id), owned: this.ownedCosmetics.includes(item.id) })
     );
   },
 
@@ -110,16 +112,44 @@ const GuildShopManager = {
     if (!CurrencyManager.spend(CURRENCY.GUILD_COINS, item.cost))
       return { ok: false, reason: 'Need ' + item.cost + ' Guild Coins' };
     this.purchasedToday.push(itemId);
+    if (item.type === 'gear') {
+      const statBonus = this._parseStatBonus(item.desc);
+      GearManager.addGear(new GearInstance({
+        defId: item.id,
+        name: item.name,
+        slot: item.slot,
+        rarity: item.rarity,
+        statBonus
+      }));
+    } else if (!this.ownedCosmetics.includes(item.id)) {
+      this.ownedCosmetics.push(item.id);
+    }
     return { ok: true, item };
   },
 
+
+  _parseStatBonus(desc) {
+    const bonus = { damage: 0, defense: 0, hp: 0 };
+    const parts = String(desc || '').split('+').slice(1);
+    parts.forEach(raw => {
+      const token = raw.trim().toUpperCase();
+      const amount = parseInt(token, 10);
+      if (!Number.isFinite(amount)) return;
+      if (token.includes('DMG')) bonus.damage += amount;
+      else if (token.includes('DEF')) bonus.defense += amount;
+      else if (token.includes('HP')) bonus.hp += amount;
+    });
+    return bonus;
+  },
+
   toJSON() {
-    return { purchasedToday: this.purchasedToday, lastShopDate: this.lastShopDate };
+    return { purchasedToday: this.purchasedToday, ownedCosmetics: this.ownedCosmetics, lastShopDate: this.lastShopDate };
   },
 
   fromJSON(data) {
     if (!data) return;
     this.purchasedToday = data.purchasedToday || [];
+    this.ownedCosmetics = data.ownedCosmetics || [];
     this.lastShopDate   = data.lastShopDate   || null;
     this._checkDailyReset();
   },

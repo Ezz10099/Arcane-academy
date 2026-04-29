@@ -3,6 +3,7 @@ import HeroManager, { HeroInstance } from '../systems/HeroManager.js';
 import CurrencyManager from '../systems/CurrencyManager.js';
 import BattleEngine from '../systems/BattleEngine.js';
 import AchievementManager from '../systems/AchievementManager.js';
+import ElderTreeManager from '../systems/ElderTreeManager.js';
 import BondManager from '../systems/BondManager.js';
 import STAGE_DEFINITIONS, { getCampaignRegions } from '../data/stageDefinitions.js';
 import HERO_DEFINITIONS from '../data/heroDefinitions.js';
@@ -121,7 +122,7 @@ export default class CampaignScene extends Phaser.Scene {
 
   _getStageSkipCost(stage) {
     const base = Math.max(20, Math.floor(stage.rewards.gold * 0.25));
-    return Math.floor(base);
+    return Math.max(1, Math.floor(base * ElderTreeManager.getSkipCostMult()));
   }
 
   _skipStage(stage) {

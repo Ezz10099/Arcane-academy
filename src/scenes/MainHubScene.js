@@ -147,7 +147,10 @@ export default class MainHubScene extends Phaser.Scene {
     }
 
     body.setInteractive({ useHandCursor: true });
-    body.on('pointerup', () => this.scene.start(scene));
+    body.on('pointerup', () => {
+      const gate = this._getSceneUnlock(scene);
+      this._startSceneOrLocked(scene, gate?.unlockKey, gate?.lockedMsg);
+    });
 
     const dot = this.add.circle(x + 20, y - 20, 5, ARCANE_THEME.colors.danger).setVisible(false);
     if (dotKey) this._dotTargets[dotKey] = dot;
@@ -172,13 +175,11 @@ export default class MainHubScene extends Phaser.Scene {
 
     this._resourceTexts = defs.map((def, index) => {
       const x = -98 + (index * 98);
-      panel.add(this.add.text(x, 0, def.icon, { font: '13px serif', fill: def.tint }).setOrigin(0.5));
       const icon = this.add.text(x, 0, def.icon, { font: '13px serif', fill: def.tint }).setOrigin(0.5);
       const valueText = this.add.text(x + 24, 0, '0', {
         font: '14px monospace',
         fill: ARCANE_THEME.colors.textPrimary
       }).setOrigin(0.5);
-      panel.add(valueText);
       panel.add([icon, valueText]);
       return valueText;
     });
@@ -222,7 +223,10 @@ export default class MainHubScene extends Phaser.Scene {
     const hit = this.add.zone(x, y, size + 16, size + 16).setInteractive({ useHandCursor: true });
     hit.on('pointerdown', () => this.tweens.add({ targets: [circle, ring, iconText], scale: 1.03, duration: 110, yoyo: true }));
     hit.on('pointerup', () => {
-      if (scene) this.scene.start(scene);
+      if (scene) {
+        const gate = this._getSceneUnlock(scene);
+        this._startSceneOrLocked(scene, gate?.unlockKey, gate?.lockedMsg);
+      }
       else this._showToast(toast || 'Soon');
     });
 
@@ -276,7 +280,10 @@ export default class MainHubScene extends Phaser.Scene {
 
       const hit = this.add.zone(item.x, buttonY, radius * 2 + 10, radius * 2 + 10).setInteractive({ useHandCursor: true });
       hit.on('pointerdown', () => this.tweens.add({ targets: [ring, core, icon], scale: 1.03, duration: 110, yoyo: true }));
-      hit.on('pointerup', () => this.scene.start(item.scene));
+      hit.on('pointerup', () => {
+        const gate = this._getSceneUnlock(item.scene);
+        this._startSceneOrLocked(item.scene, gate?.unlockKey, gate?.lockedMsg);
+      });
 
       if (item.center) {
         this.tweens.add({ targets: ring, alpha: 0.78, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
@@ -287,6 +294,25 @@ export default class MainHubScene extends Phaser.Scene {
         this._dotTargets[item.dotKey] = dot;
       }
     });
+  }
+
+
+  _startSceneOrLocked(scene, unlockKey, lockedMsg) {
+    if (unlockKey && !GameState.isUnlocked(unlockKey)) {
+      this._showToast(lockedMsg || 'Locked');
+      return;
+    }
+    this.scene.start(scene);
+  }
+
+  _getSceneUnlock(scene) {
+    const rules = {
+      Arena: { unlockKey: 'ARENA', lockedMsg: 'Unlocks after Region 2' },
+      Guild: { unlockKey: 'GUILD', lockedMsg: 'Unlocks after Region 3' },
+      AffinityTowerSelection: { unlockKey: 'AFFINITY_TOWERS', lockedMsg: 'Unlocks after Region 3' },
+      EndlessTower: { unlockKey: 'FULL_ENDLESS_CONTENT', lockedMsg: 'Unlocks after Region 5' }
+    };
+    return rules[scene] || null;
   }
 
   _buildIdleHeroAnimations() {
@@ -334,7 +360,10 @@ export default class MainHubScene extends Phaser.Scene {
       height: 36,
       label,
       font: '16px serif',
-      onClick: () => this.scene.start(scene)
+      onClick: () => {
+        const gate = this._getSceneUnlock(scene);
+        this._startSceneOrLocked(scene, gate?.unlockKey, gate?.lockedMsg);
+      }
     });
     return root;
   }

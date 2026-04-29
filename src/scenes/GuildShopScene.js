@@ -65,11 +65,12 @@ export default class GuildShopScene extends Phaser.Scene {
 
       // Buy button
       const purchased = item.purchased;
+      const owned = Boolean(item.owned);
       const canAfford = !purchased && coins >= item.cost;
       const btnC   = purchased ? 0x111111 : (canAfford ? 0x0d1a00 : 0x111111);
       const btnBrd = purchased ? 0x333333 : (canAfford ? 0x44cc44 : 0x333333);
-      const btnLbl = purchased ? 'SOLD' : 'BUY';
-      const btnClr = purchased ? '#444444' : (canAfford ? '#44cc44' : '#555555');
+      const btnLbl = purchased ? (owned ? 'OWNED' : 'SOLD') : 'BUY';
+      const btnClr = purchased ? (owned ? '#88cc88' : '#444444') : (canAfford ? '#44cc44' : '#555555');
 
       const buyBg = this.add.rectangle(ix, iy - cardH / 2 + 150, 150, 36, btnC)
         .setStrokeStyle(1, btnBrd);
