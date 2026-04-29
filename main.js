@@ -20,8 +20,9 @@ import AwakenAltarScene             from './src/scenes/AwakenAltarScene.js';
 import LoginStreakScene             from './src/scenes/LoginStreakScene.js';
 import SettingsScene                from './src/scenes/SettingsScene.js';
 import GearForgeScene               from './src/scenes/GearForgeScene.js';
+import installDevConsole            from './src/debug/DevConsole.js';
 
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   width: 480,
   height: 854,
@@ -34,3 +35,5 @@ new Phaser.Game({
     orientation: Phaser.Scale.Orientation.PORTRAIT
   }
 });
+
+installDevConsole(game);
