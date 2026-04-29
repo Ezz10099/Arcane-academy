@@ -39,6 +39,7 @@ export default class SummonScene extends Phaser.Scene {
   constructor() { super('Summon'); }
 
   create() {
+    this._syncBasicSummonUnlock();
     const W = 480, H = 854;
     this._W = W; this._H = H;
     this._activeBanner = 'BASIC';
@@ -61,6 +62,19 @@ export default class SummonScene extends Phaser.Scene {
     this.time.addEvent({ delay: 500, loop: true, callback: this._refreshCurrency, callbackScope: this });
     this._refreshCurrency();
     this._build();
+  }
+
+  _syncBasicSummonUnlock() {
+    if (GameState.isUnlocked('BASIC_SUMMON')) return;
+    const stageId = GameState.campaignProgress?.stageCleared;
+    if (stageId === '1-5') {
+      GameState.addUnlockedSystem('BASIC_SUMMON');
+      return;
+    }
+    const [r, st] = String(stageId || '').split('-').map(Number);
+    if (Number.isFinite(r) && Number.isFinite(st) && (r > 1 || (r === 1 && st >= 5))) {
+      GameState.addUnlockedSystem('BASIC_SUMMON');
+    }
   }
 
   // ─── BUILD ────────────────────────────────────────────────────────────────────
@@ -86,7 +100,7 @@ export default class SummonScene extends Phaser.Scene {
     const c = this._mainCont, W = this._W, H = this._H;
     c.add(createPanel(this, { x: W / 2, y: H / 2, width: 340, height: 170, title: 'LOCKED' }));
     c.add(this.add.text(W / 2, H / 2 + 10,
-      '\uD83D\uDD12 Summon\nClear Stage 1-5 to unlock',
+      '\uD83D\uDD12 Summon\nUnlock by finishing Onboarding or clearing Stage 1-5',
       { font: '18px monospace', fill: ARCANE_THEME.colors.textMuted, align: 'center' }).setOrigin(0.5));
     this._addBack(c);
   }
