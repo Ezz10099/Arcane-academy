@@ -6,51 +6,69 @@ import LoginStreakManager from '../systems/LoginStreakManager.js';
 import DailyCodexManager from '../systems/DailyCodexManager.js';
 import HeroManager from '../systems/HeroManager.js';
 import { CURRENCY } from '../data/constants.js';
-import { ARCANE_THEME, addArcaneBackdrop, createPanel, createArcaneButton } from '../ui/ArcaneUI.js';
-import { addFullscreenBackground, addPanelImage, addUIButton, addIconImage } from '../ui/ArcaneAssets.js';
+import { ARCANE_THEME, addArcaneBackdrop, createPanel } from '../ui/ArcaneUI.js';
 
 const W = 480;
 const H = 854;
 const OUTER_PADDING = 16;
+const TOP_H = 78;
+const BOTTOM_H = 92;
+const CENTER_TOP = TOP_H + 12;
+const CENTER_BOTTOM = H - BOTTOM_H - 12;
+const CENTER_H = CENTER_BOTTOM - CENTER_TOP;
 
 const ICONS = {
-  settings: '✦',
-  gold: '◍',
+  settings: '⚙',
+  gold: '●',
   gems: '◆',
-  tickets: '◈',
+  tickets: '◇',
   energy: 'ϟ',
-  adventure: '⚔',
+  campaign: '⚔',
   heroes: '⛨',
-  academy: '⌂',
   summon: '✹',
   guild: '⛊',
-  friends: '☉',
+  more: '☰',
   arena: '⚔',
-  rankings: '♛',
-  chat: '✉',
-  quests: '☰',
+  tower: '♜',
+  boss: '☠',
+  codex: '☷',
+  tree: '♧',
+  shop: '◈',
   mail: '✉',
-  events: '✦',
-  pass: '⬢',
-  offers: '◉'
+  events: '✦'
 };
+
+const NAV_TABS = [
+  { key: 'Campaign', label: 'Campaign', icon: ICONS.campaign },
+  { key: 'Heroes', label: 'Heroes', icon: ICONS.heroes },
+  { key: 'Summon', label: 'Summon', icon: ICONS.summon, featured: true },
+  { key: 'Guild', label: 'Guild', icon: ICONS.guild },
+  { key: 'More', label: 'More', icon: ICONS.more }
+];
 
 export default class MainHubScene extends Phaser.Scene {
   constructor() {
     super('MainHub');
-    this._heroSprites = [];
+    this._selectedTab = 'Campaign';
     this._pendingIdleGold = 0;
     this._dotTargets = {};
     this._resourceTexts = [];
+    this._currencyTexts = {};
   }
 
-  create() {
+  create(data = {}) {
+    this._selectedTab = data.tab || 'Campaign';
+    this._dotTargets = {};
+    this._resourceTexts = [];
+    this._currencyTexts = {};
+
     addArcaneBackdrop(this, W, H);
-    addFullscreenBackground(this, 'mainHubBackground', { alpha: 0.94, depth: -9 });
-    this._drawCenterScene();
+    this._centerRoot = this.add.container(0, 0);
+    this._bottomNavRoot = this.add.container(0, 0);
     this._drawTopBar();
-    this._drawSideButtons();
+    this._drawSideShortcuts();
     this._drawBottomNav();
+    this._drawTabContent();
 
     this.time.addEvent({ delay: 500, loop: true, callback: this._refreshUI, callbackScope: this });
     this.time.addEvent({ delay: 1000, loop: true, callback: this._idleTick, callbackScope: this });
@@ -65,268 +83,284 @@ export default class MainHubScene extends Phaser.Scene {
   }
 
   _drawTopBar() {
-    const topBarHeight = 72;
-    const y = topBarHeight / 2 + 6;
-    addPanelImage(this, W / 2, y, 'topBarFrame', {
-      displayWidth: W - (OUTER_PADDING * 2),
-      displayHeight: topBarHeight,
-      alpha: 0.96
-    });
+    const y = TOP_H / 2 + 6;
     createPanel(this, {
       x: W / 2,
       y,
-      width: W - (OUTER_PADDING * 2),
-      height: topBarHeight,
+      width: W - OUTER_PADDING * 2,
+      height: TOP_H,
       fill: 0x120c22,
       border: 0x89613f,
       withInner: false,
-      alpha: 0.28
+      alpha: 0.88
     });
 
-    this._avatarRing = this.add.circle(OUTER_PADDING + 28, y, 24, 0x2a1d45, 0.95).setStrokeStyle(2, 0xc69d63, 1);
-    this._avatarCore = this.add.circle(OUTER_PADDING + 28, y, 16, 0x4e2f72, 0.8).setStrokeStyle(1, 0xe3bf80, 0.8);
-    this._avatarOnline = this.add.circle(OUTER_PADDING + 44, y + 17, 4, 0x58ffb2, 0.95)
-      .setStrokeStyle(1, 0xdffff0, 0.8);
-    this.tweens.add({ targets: this._avatarOnline, alpha: 0.35, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.inOut' });
-
+    this.add.circle(OUTER_PADDING + 28, y, 24, 0x2a1d45, 0.95).setStrokeStyle(2, 0xc69d63, 1);
+    this.add.circle(OUTER_PADDING + 28, y, 15, 0x4e2f72, 0.8).setStrokeStyle(1, 0xe3bf80, 0.8);
     this._levelBadge = this.add.circle(OUTER_PADDING + 14, y + 18, 9, 0x4a316b, 1).setStrokeStyle(1, 0xe5be7e, 0.9);
     this._levelText = this.add.text(OUTER_PADDING + 14, y + 18, '1', { font: '10px monospace', fill: ARCANE_THEME.colors.textPrimary }).setOrigin(0.5);
 
-    this._usernameText = this.add.text(OUTER_PADDING + 58, y - 14, 'Arcanist', { font: '14px monospace', fill: ARCANE_THEME.colors.textPrimary });
-    this._powerText = this.add.text(OUTER_PADDING + 58, y + 6, 'Power 0', { font: '12px monospace', fill: ARCANE_THEME.colors.textSecondary });
+    this._usernameText = this.add.text(OUTER_PADDING + 58, y - 16, 'Risen Ruler', { font: '14px monospace', fill: ARCANE_THEME.colors.textPrimary });
+    this._powerText = this.add.text(OUTER_PADDING + 58, y + 5, 'Power 0', { font: '11px monospace', fill: ARCANE_THEME.colors.textSecondary });
 
     const currencyDefs = [
       { key: CURRENCY.GOLD, icon: ICONS.gold, tint: '#ffd27b', short: 'gold' },
-      { key: CURRENCY.PREMIUM_CRYSTALS, icon: ICONS.gems, tint: '#d3a2ff', short: 'gems' },
-      { key: CURRENCY.CRYSTALS, icon: ICONS.tickets, tint: '#bba8ff', short: 'tickets' },
-      { key: CURRENCY.AWAKENING_SHARDS, icon: ICONS.energy, tint: '#7ecfff', short: 'energy' }
+      { key: CURRENCY.PREMIUM_CRYSTALS, icon: ICONS.gems, tint: '#d3a2ff', short: 'abyss crystals' },
+      { key: CURRENCY.CRYSTALS, icon: ICONS.tickets, tint: '#bba8ff', short: 'summon seals' }
     ];
 
-    this._currencyTexts = {};
-    let cx = 250;
+    let cx = 258;
     currencyDefs.forEach(def => {
       const holder = this.add.container(cx, y);
-      const chip = this.add.rectangle(0, 0, 52, 24, 0x1c1230, 0.95).setStrokeStyle(1, 0x8f6947, 0.9);
-      const chipGlow = this.add.rectangle(0, 0, 52, 24, 0x7837b3, 0.08);
-      const icon = this.add.text(-17, 0, def.icon, { font: '12px serif', fill: def.tint }).setOrigin(0.5);
-      const value = this.add.text(1, 0, '0', { font: '11px monospace', fill: ARCANE_THEME.colors.textPrimary }).setOrigin(0.5);
-      const plus = this.add.rectangle(24, 0, 14, 14, 0x3a264f, 1).setStrokeStyle(1, 0xc79e67, 0.8).setInteractive({ useHandCursor: true });
-      const plusText = this.add.text(24, 0, '+', { font: '10px monospace', fill: '#ffe4b8' }).setOrigin(0.5);
+      const chip = this.add.rectangle(0, 0, 58, 24, 0x1c1230, 0.94).setStrokeStyle(1, 0x8f6947, 0.8);
+      const icon = this.add.text(-22, 0, def.icon, { font: '11px serif', fill: def.tint }).setOrigin(0.5);
+      const value = this.add.text(2, 0, '0', { font: '10px monospace', fill: ARCANE_THEME.colors.textPrimary }).setOrigin(0.5);
+      const plus = this.add.text(25, 0, '+', { font: '11px monospace', fill: '#ffe4b8' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
       plus.on('pointerup', () => this._showToast(`${def.short} sources`));
-      holder.add([chip, chipGlow, icon, value, plus, plusText]);
+      holder.add([chip, icon, value, plus]);
       this._currencyTexts[def.key] = value;
-      cx += 52;
+      cx += 58;
     });
 
-    this._makeIconButton({ x: W - OUTER_PADDING - 20, y, label: ICONS.settings, scene: 'Settings' });
+    this._makeSmallButton(W - OUTER_PADDING - 20, y, ICONS.settings, () => this.scene.start('Settings'));
   }
 
-  _drawCenterScene() {
-    const centerY = 420;
-    this.add.ellipse(W / 2, centerY, W + 120, H - 260, 0x0f0b1d, 0.85);
-    this.add.ellipse(W / 2, centerY - 120, W + 140, 320, 0x25143c, 0.24);
-    this.add.ellipse(W / 2, centerY + 20, W + 70, 250, 0x4d2b66, 0.2);
-
-    const clouds = this.add.ellipse(W / 2, 250, 420, 110, 0x8d63cf, 0.11);
-    this.tweens.add({ targets: clouds, x: W / 2 + 8, yoyo: true, duration: 5000, repeat: -1, ease: 'Sine.inOut' });
-
-    this._drawBuilding({ x: 88, y: 438, label: 'Campaign Gate', scene: 'Campaign', color: 0x64315c, icon: ICONS.adventure });
-    this._drawBuilding({ x: 188, y: 356, label: 'Summon Portal', scene: 'Summon', color: 0x6a3e9d, pulse: true, dotKey: 'summon', icon: ICONS.summon });
-    this._drawBuilding({ x: 298, y: 350, label: 'Academy Tower', scene: 'AffinityTowerSelection', color: 0x3f326b, icon: ICONS.academy });
-    this._drawBuilding({ x: 392, y: 435, label: 'Guild Hall', scene: 'Guild', color: 0x523245, icon: ICONS.guild });
-
-    this._heroLayer = this.add.container(0, 0);
-    this._buildIdleHeroAnimations();
-    this._drawResourceStrip();
-  }
-
-  _drawBuilding({ x, y, label, scene, color, pulse = false, dotKey = null, icon = '◆' }) {
-    const pad = this.add.container(x, y);
-    const glow = this.add.circle(0, 0, 36, color, 0.3);
-    const body = this.add.circle(0, 0, 24, color, 0.9).setStrokeStyle(2, 0xc79d62, 0.9);
-    const inner = this.add.circle(0, 0, 14, 0x140c22, 0.55).setStrokeStyle(1, 0xd2b070, 0.7);
-    const iconText = this.add.text(0, -1, icon, { font: '13px serif', fill: '#f7e0bd' }).setOrigin(0.5);
-    const title = this.add.text(0, 35, label, { font: '11px monospace', fill: ARCANE_THEME.colors.textPrimary, align: 'center' }).setOrigin(0.5);
-    pad.add([glow, body, inner, iconText, title]);
-
-    if (pulse) {
-      this.tweens.add({ targets: glow, scaleX: 1.22, scaleY: 1.22, alpha: 0.12, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      this.tweens.add({ targets: iconText, alpha: 0.5, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    }
-
-    body.setInteractive({ useHandCursor: true });
-    body.on('pointerup', () => {
-      const gate = this._getSceneUnlock(scene);
-      this._startSceneOrLocked(scene, gate?.unlockKey, gate?.lockedMsg);
-    });
-
-    const dot = this.add.circle(x + 20, y - 20, 5, ARCANE_THEME.colors.danger).setVisible(false);
-    if (dotKey) this._dotTargets[dotKey] = dot;
-  }
-
-  _drawResourceStrip() {
-    addPanelImage(this, W / 2, 540, 'panelSmall', { displayWidth: 312, displayHeight: 34, alpha: 0.86 });
-    const panel = createPanel(this, {
-      x: W / 2,
-      y: 540,
-      width: 312,
-      height: 34,
-      fill: 0x0f0a1c,
-      border: 0x8d6940,
-      withInner: false,
-      alpha: 0.35
-    });
-
-    const defs = [
-      { key: CURRENCY.GOLD, icon: ICONS.gold, tint: '#ffd27b' },
-      { key: CURRENCY.PREMIUM_CRYSTALS, icon: ICONS.gems, tint: '#d3a2ff' },
-      { key: CURRENCY.CRYSTALS, icon: ICONS.tickets, tint: '#bba8ff' }
+  _drawSideShortcuts() {
+    const shortcuts = [
+      { x: OUTER_PADDING + 22, y: 180, label: 'Events', icon: ICONS.events, scene: 'Achievement', dotKey: 'events' },
+      { x: OUTER_PADDING + 22, y: 238, label: 'Codex', icon: ICONS.codex, scene: 'DailyCodex', dotKey: 'codex' },
+      { x: W - OUTER_PADDING - 22, y: 180, label: 'Arena', icon: ICONS.arena, scene: 'Arena' },
+      { x: W - OUTER_PADDING - 22, y: 238, label: 'Shop', icon: ICONS.shop, scene: 'GuildShop', dotKey: 'offers' }
     ];
 
-    this._resourceTexts = defs.map((def, index) => {
-      const x = -98 + (index * 98);
-      const icon = this.add.text(x, 0, def.icon, { font: '13px serif', fill: def.tint }).setOrigin(0.5);
-      const valueText = this.add.text(x + 24, 0, '0', {
-        font: '14px monospace',
-        fill: ARCANE_THEME.colors.textPrimary
-      }).setOrigin(0.5);
-      panel.add([icon, valueText]);
-      return valueText;
-    });
-  }
-
-  _drawSideButtons() {
-    const leftButtons = [
-      { icon: ICONS.friends, label: 'Friends', toast: 'Friends' },
-      { icon: ICONS.arena, label: 'Arena', scene: 'Arena' },
-      { icon: ICONS.rankings, label: 'Ranks', scene: 'EndlessTower' },
-      { icon: ICONS.chat, label: 'Chat', toast: 'Chat' }
-    ];
-
-    const rightButtons = [
-      { icon: ICONS.quests, label: 'Quests', scene: 'DailyCodex', dotKey: 'codex' },
-      { icon: ICONS.mail, label: 'Mail', toast: 'Mail' },
-      { icon: ICONS.events, label: 'Events', scene: 'Achievement', large: true, dotKey: 'events', timer: '02:19' },
-      { icon: ICONS.pass, label: 'Pass', toast: 'Battle Pass' },
-      { icon: ICONS.offers, label: 'Offers', scene: 'GuildShop', dotKey: 'offers' }
-    ];
-
-    leftButtons.forEach((item, idx) => {
-      this._makeSideButton({ x: OUTER_PADDING + 26, y: 322 + (idx * 56), ...item });
-    });
-
-    rightButtons.forEach((item, idx) => {
-      this._makeSideButton({ x: W - OUTER_PADDING - 26, y: 296 + (idx * 56), ...item });
-    });
-  }
-
-  _makeSideButton({ x, y, icon, label, scene, toast, large = false, dotKey = null, timer = null }) {
-    const size = large ? 56 : 46;
-    const circle = this.add.circle(x, y, size / 2, 0x201335, 0.92).setStrokeStyle(2, 0xba915a, 0.95);
-    const ring = this.add.circle(x, y, (size / 2) - 6, 0x0f0a1b, 0.6).setStrokeStyle(1, 0x9a7548, 0.8);
-    const iconText = this.add.text(x, y - 1, icon, { font: `${large ? 22 : 16}px serif`, fill: '#f5dfbc' }).setOrigin(0.5);
-    const title = this.add.text(x, y + (large ? 38 : 32), label, {
-      font: '10px monospace',
-      fill: ARCANE_THEME.colors.textSecondary
-    }).setOrigin(0.5);
-
-    const hit = this.add.zone(x, y, size + 16, size + 16).setInteractive({ useHandCursor: true });
-    hit.on('pointerdown', () => this.tweens.add({ targets: [circle, ring, iconText], scale: 1.03, duration: 110, yoyo: true }));
-    hit.on('pointerup', () => {
-      if (scene) {
-        const gate = this._getSceneUnlock(scene);
-        this._startSceneOrLocked(scene, gate?.unlockKey, gate?.lockedMsg);
-      }
-      else this._showToast(toast || 'Soon');
-    });
-
-    if (timer) {
-      const timerPlate = this.add.rectangle(x, y + (large ? 22 : 18), 30, 11, 0x2f1b44, 0.95).setStrokeStyle(1, 0xc89f65, 0.8);
-      const timerText = this.add.text(x, y + (large ? 22 : 18), timer, { font: '8px monospace', fill: '#ffdbad' }).setOrigin(0.5);
-      this.tweens.add({ targets: timerText, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
-      timerPlate.setDepth(circle.depth + 1);
-      timerText.setDepth(circle.depth + 2);
-    }
-
-    if (dotKey) {
-      const dot = this.add.circle(x + (size / 2) - 7, y - (size / 2) + 7, 5, ARCANE_THEME.colors.danger).setVisible(false);
-      this._dotTargets[dotKey] = dot;
-    }
-  }
-
-  _drawBottomNav() {
-    const navHeight = 92;
-    const y = H - (navHeight / 2);
-    createPanel(this, {
-      x: W / 2,
-      y,
-      width: W - (OUTER_PADDING * 2),
-      height: navHeight,
-      fill: 0x140e25,
-      border: 0x9a7340,
-      withInner: true,
-      alpha: 0.24
-    });
-
-    addPanelImage(this, W / 2, y, 'bottomNavFrame', {
-      displayWidth: W - (OUTER_PADDING * 2),
-      displayHeight: navHeight,
-      alpha: 0.99
-    });
-
-    const items = [
-      { label: 'Adventure', icon: ICONS.adventure, scene: 'Campaign', x: 62, iconKey: 'iconCampaign' },
-      { label: 'Heroes', icon: ICONS.heroes, scene: 'Roster', x: 142, iconKey: 'iconHeroes' },
-      { label: 'Academy', icon: ICONS.academy, scene: 'AffinityTowerSelection', x: 222 },
-      { label: 'Summon', icon: ICONS.summon, scene: 'Summon', x: 302, center: true, dotKey: 'summon', iconKey: 'iconSummon', buttonKey: 'buttonPrimary' },
-      { label: 'Guild', icon: ICONS.guild, scene: 'Guild', x: 382, iconKey: 'iconGuild' }
-    ];
-
-    items.forEach(item => {
-      const buttonY = item.center ? y - 28 : y + 2;
-      const radius = item.center ? 34 : 25;
-      const ring = this.add.circle(item.x, buttonY, radius, item.center ? 0x3c2168 : 0x241639, 0.98)
-        .setStrokeStyle(2, item.center ? 0xd2ab6d : 0xa37d4a, 1);
-      const core = this.add.circle(item.x, buttonY, radius - (item.center ? 9 : 7), 0x110a20, 0.7)
-        .setStrokeStyle(1, 0x8f6841, 0.8);
-      const buttonAsset = addUIButton(this, item.x, buttonY, item.buttonKey || 'buttonSecondary', {
-        displayWidth: radius * 2,
-        displayHeight: radius * 2,
-        alpha: 0.9
-      });
-      const iconAsset = item.iconKey ? addIconImage(this, item.x, buttonY - 7, item.iconKey, {
-        displayWidth: item.center ? 24 : 20,
-        displayHeight: item.center ? 24 : 20,
-        alpha: 0.95
-      }) : null;
-      const icon = this.add.text(item.x, buttonY - 7, item.icon, { font: `${item.center ? 22 : 17}px serif`, fill: '#f5dfbc' }).setOrigin(0.5);
-      const text = this.add.text(item.x, buttonY + (item.center ? 18 : 16), item.label, {
-        font: `${item.center ? 11 : 10}px monospace`,
-        fill: ARCANE_THEME.colors.textPrimary
-      }).setOrigin(0.5);
-
-      const hit = this.add.zone(item.x, buttonY, radius * 2 + 10, radius * 2 + 10).setInteractive({ useHandCursor: true });
-      hit.on('pointerdown', () => {
-        const pulseTargets = [ring, core, icon, text, buttonAsset];
-        if (iconAsset) pulseTargets.push(iconAsset);
-        this.tweens.add({ targets: pulseTargets, scale: 1.03, duration: 110, yoyo: true });
-      });
+    shortcuts.forEach(item => {
+      const button = this.add.container(item.x, item.y);
+      const bg = this.add.circle(0, 0, 22, 0x201335, 0.9).setStrokeStyle(1, 0xba915a, 0.85);
+      const icon = this.add.text(0, -1, item.icon, { font: '16px serif', fill: '#f5dfbc' }).setOrigin(0.5);
+      const label = this.add.text(0, 29, item.label, { font: '9px monospace', fill: ARCANE_THEME.colors.textSecondary }).setOrigin(0.5);
+      const hit = this.add.zone(0, 0, 52, 52).setInteractive({ useHandCursor: true });
       hit.on('pointerup', () => {
         const gate = this._getSceneUnlock(item.scene);
         this._startSceneOrLocked(item.scene, gate?.unlockKey, gate?.lockedMsg);
       });
-
-      if (item.center) {
-        this.tweens.add({ targets: ring, alpha: 0.78, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      }
-
+      button.add([bg, icon, label, hit]);
       if (item.dotKey) {
-        const dot = this.add.circle(item.x + radius - 8, buttonY - radius + 8, 5, ARCANE_THEME.colors.danger).setVisible(false);
+        const dot = this.add.circle(item.x + 14, item.y - 14, 5, ARCANE_THEME.colors.danger).setVisible(false);
         this._dotTargets[item.dotKey] = dot;
       }
     });
   }
 
+  _drawBottomNav() {
+    this._bottomNavRoot.removeAll(true);
+    const c = this._bottomNavRoot;
+    const navY = H - BOTTOM_H / 2;
+    c.add(createPanel(this, {
+      x: W / 2,
+      y: navY,
+      width: W - OUTER_PADDING * 2,
+      height: BOTTOM_H,
+      fill: 0x140e25,
+      border: 0x9a7340,
+      withInner: false,
+      alpha: 0.9
+    }));
+
+    const startX = 54;
+    const gap = 93;
+    NAV_TABS.forEach((item, index) => {
+      const x = startX + index * gap;
+      const selected = item.key === this._selectedTab;
+      const y = item.featured ? navY - 14 : navY;
+      const radius = item.featured ? 30 : 24;
+      const bg = this.add.circle(x, y - 8, radius, selected ? 0x44206d : 0x241639, 0.96)
+        .setStrokeStyle(2, selected ? 0xffd27a : 0x9a7340, selected ? 1 : 0.75);
+      const icon = this.add.text(x, y - 10, item.icon, { font: `${item.featured ? 20 : 16}px serif`, fill: selected ? '#fff0c6' : '#d9c09a' }).setOrigin(0.5);
+      const text = this.add.text(x, navY + 25, item.label, { font: '10px monospace', fill: selected ? '#ffd27a' : ARCANE_THEME.colors.textSecondary }).setOrigin(0.5);
+      const hit = this.add.zone(x, navY, 78, BOTTOM_H).setInteractive({ useHandCursor: true });
+      hit.on('pointerup', () => this._selectTab(item.key));
+      hit.on('pointerdown', () => this.tweens.add({ targets: [bg, icon, text], scale: 1.04, duration: 90, yoyo: true }));
+      c.add([bg, icon, text, hit]);
+      if (item.key === 'Summon') {
+        const dot = this.add.circle(x + 20, y - 29, 5, ARCANE_THEME.colors.danger).setVisible(false);
+        this._dotTargets.summon = dot;
+        c.add(dot);
+      }
+    });
+  }
+
+  _selectTab(tabKey) {
+    this._selectedTab = tabKey;
+    this._drawBottomNav();
+    this._drawTabContent();
+    this._refreshUI();
+  }
+
+  _drawTabContent() {
+    this._centerRoot.removeAll(true);
+    const c = this._centerRoot;
+
+    c.add(this.add.rectangle(W / 2, CENTER_TOP + CENTER_H / 2, W - OUTER_PADDING * 2, CENTER_H, 0x0c0818, 0.72)
+      .setStrokeStyle(1, 0x513a66, 0.65));
+
+    switch (this._selectedTab) {
+      case 'Campaign':
+        this._drawCampaignTab(c);
+        break;
+      case 'Heroes':
+        this._drawHeroesTab(c);
+        break;
+      case 'Summon':
+        this._drawSummonTab(c);
+        break;
+      case 'Guild':
+        this._drawGuildTab(c);
+        break;
+      case 'More':
+      default:
+        this._drawMoreTab(c);
+        break;
+    }
+  }
+
+  _drawCampaignTab(c) {
+    this._drawTabHeader(c, 'CAMPAIGN', 'Chapter map placeholder — functional layout first');
+    const mapY = 352;
+    c.add(this.add.rectangle(W / 2, mapY, 360, 300, 0x120a20, 0.94).setStrokeStyle(2, 0x8f6947, 0.9));
+    c.add(this.add.text(W / 2, mapY - 118, 'Fallen Crown Road', { font: '16px monospace', fill: '#ffd27a' }).setOrigin(0.5));
+
+    const nodes = [
+      { x: 130, y: mapY + 65, label: '1-1' },
+      { x: 190, y: mapY + 15, label: '1-2' },
+      { x: 255, y: mapY - 20, label: '1-3' },
+      { x: 325, y: mapY - 70, label: 'BOSS', boss: true }
+    ];
+    nodes.forEach((node, index) => {
+      if (index > 0) c.add(this.add.line(0, 0, nodes[index - 1].x, nodes[index - 1].y, node.x, node.y, 0x7b4fa1, 0.75).setOrigin(0));
+      c.add(this.add.circle(node.x, node.y, node.boss ? 20 : 15, node.boss ? 0x5a1830 : 0x261542, 1).setStrokeStyle(2, node.boss ? 0xff6b8b : 0xd0a469, 1));
+      c.add(this.add.text(node.x, node.y, node.label, { font: node.boss ? '9px monospace' : '10px monospace', fill: '#f5dfbc' }).setOrigin(0.5));
+    });
+
+    const stage = GameState.campaignProgress.stageCleared || 'none';
+    c.add(this.add.text(W / 2, 548, `Last cleared: ${stage}`, { font: '12px monospace', fill: ARCANE_THEME.colors.textSecondary }).setOrigin(0.5));
+    this._addActionButton(c, W / 2, 592, 230, 42, 'OPEN CAMPAIGN', () => this.scene.start('Campaign'));
+  }
+
+  _drawHeroesTab(c) {
+    this._drawTabHeader(c, 'HEROES', 'Roster, squad, gear and upgrades');
+    const heroes = HeroManager.getAllHeroes();
+    const squad = GameState.getBattleSquadEntries?.() || [];
+
+    c.add(this.add.rectangle(W / 2, 285, 360, 150, 0x120a20, 0.94).setStrokeStyle(2, 0x8f6947, 0.9));
+    c.add(this.add.text(W / 2, 235, `${heroes.length} heroes owned`, { font: '18px monospace', fill: '#ffd27a' }).setOrigin(0.5));
+    c.add(this.add.text(W / 2, 270, `Battle squad: ${squad.length}/5`, { font: '13px monospace', fill: ARCANE_THEME.colors.textPrimary }).setOrigin(0.5));
+    c.add(this.add.text(W / 2, 310, squad.map(entry => HeroManager.getHero(entry.heroId)?.name || 'Unknown').join('  |  ') || 'No squad selected', {
+      font: '10px monospace', fill: ARCANE_THEME.colors.textSecondary, align: 'center', wordWrap: { width: 320 }
+    }).setOrigin(0.5));
+
+    this._addActionButton(c, W / 2, 450, 230, 42, 'OPEN ROSTER', () => this.scene.start('Roster'));
+    this._addActionButton(c, W / 2, 502, 230, 36, 'GEAR FORGE', () => this.scene.start('GearForge'), 'secondary');
+  }
+
+  _drawSummonTab(c) {
+    this._drawTabHeader(c, 'SUMMON', 'Abyssal gate placeholder');
+    const portalY = 330;
+    c.add(this.add.circle(W / 2, portalY, 92, 0x22103a, 0.95).setStrokeStyle(3, 0xb47cff, 0.9));
+    c.add(this.add.circle(W / 2, portalY, 56, 0x5a1ca2, 0.45).setStrokeStyle(2, 0xffd27a, 0.7));
+    c.add(this.add.text(W / 2, portalY, 'ABYSS\nGATE', { font: '18px monospace', fill: '#f5dfbc', align: 'center' }).setOrigin(0.5));
+    this.tweens.add({ targets: c.list[c.list.length - 2], alpha: 0.18, duration: 1000, yoyo: true, repeat: -1 });
+
+    this._addActionButton(c, W / 2, 506, 230, 42, 'OPEN SUMMON', () => this.scene.start('Summon'));
+    this._addActionButton(c, W / 2, 558, 230, 36, 'RATES / WISHLIST', () => this._showToast('Rates and wishlist'), 'secondary');
+  }
+
+  _drawGuildTab(c) {
+    this._drawTabHeader(c, 'GUILD', 'War council and guild systems');
+    const unlocked = GameState.isUnlocked('GUILD');
+    c.add(this.add.rectangle(W / 2, 330, 360, 190, 0x120a20, 0.94).setStrokeStyle(2, unlocked ? 0x8f6947 : 0x5b4a5f, 0.9));
+    c.add(this.add.text(W / 2, 300, unlocked ? 'Guild Hall Available' : 'Guild Hall Locked', {
+      font: '18px monospace', fill: unlocked ? '#ffd27a' : '#999999'
+    }).setOrigin(0.5));
+    c.add(this.add.text(W / 2, 344, unlocked ? 'Boss, shop, quests and guild status.' : 'Unlocks after Region 3.', {
+      font: '12px monospace', fill: ARCANE_THEME.colors.textSecondary, align: 'center'
+    }).setOrigin(0.5));
+
+    this._addActionButton(c, W / 2, 500, 230, 42, unlocked ? 'OPEN GUILD' : 'LOCKED', () => {
+      this._startSceneOrLocked('Guild', 'GUILD', 'Unlocks after Region 3');
+    }, unlocked ? 'primary' : 'disabled');
+    this._addActionButton(c, W / 2, 552, 230, 36, 'GUILD SHOP', () => {
+      this._startSceneOrLocked('GuildShop', 'GUILD', 'Unlocks after Region 3');
+    }, unlocked ? 'secondary' : 'disabled');
+  }
+
+  _drawMoreTab(c) {
+    this._drawTabHeader(c, 'MORE', 'Secondary systems');
+    const items = [
+      { label: 'Arena', icon: ICONS.arena, scene: 'Arena' },
+      { label: 'Towers', icon: ICONS.tower, scene: 'AffinityTowerSelection' },
+      { label: 'World Boss', icon: ICONS.boss, scene: 'WorldBoss' },
+      { label: 'Codex', icon: ICONS.codex, scene: 'DailyCodex' },
+      { label: 'Abyss Tree', icon: ICONS.tree, scene: 'ElderTree' },
+      { label: 'Settings', icon: ICONS.settings, scene: 'Settings' }
+    ];
+
+    items.forEach((item, index) => {
+      const col = index % 2;
+      const row = Math.floor(index / 2);
+      const x = 150 + col * 180;
+      const y = 240 + row * 96;
+      this._addSystemCard(c, x, y, item);
+    });
+  }
+
+  _drawTabHeader(c, title, subtitle) {
+    c.add(this.add.text(W / 2, CENTER_TOP + 30, title, { font: '24px monospace', fill: '#ffd27a' }).setOrigin(0.5));
+    c.add(this.add.text(W / 2, CENTER_TOP + 56, subtitle, { font: '11px monospace', fill: ARCANE_THEME.colors.textSecondary }).setOrigin(0.5));
+  }
+
+  _addSystemCard(c, x, y, item) {
+    const bg = this.add.rectangle(x, y, 150, 70, 0x171022, 0.94).setStrokeStyle(1, 0x8f6947, 0.75)
+      .setInteractive({ useHandCursor: true });
+    const icon = this.add.text(x, y - 12, item.icon, { font: '18px serif', fill: '#ffd27a' }).setOrigin(0.5);
+    const label = this.add.text(x, y + 16, item.label, { font: '11px monospace', fill: ARCANE_THEME.colors.textPrimary }).setOrigin(0.5);
+    bg.on('pointerup', () => {
+      const gate = this._getSceneUnlock(item.scene);
+      this._startSceneOrLocked(item.scene, gate?.unlockKey, gate?.lockedMsg);
+    });
+    c.add([bg, icon, label]);
+  }
+
+  _addActionButton(c, x, y, width, height, label, onClick, variant = 'primary') {
+    const fills = {
+      primary: 0x3a215a,
+      secondary: 0x221a35,
+      disabled: 0x1a1a1f
+    };
+    const strokes = {
+      primary: 0xd0a469,
+      secondary: 0x8f6947,
+      disabled: 0x555555
+    };
+    const fill = fills[variant] || fills.primary;
+    const stroke = strokes[variant] || strokes.primary;
+    const btn = this.add.rectangle(x, y, width, height, fill, 0.96).setStrokeStyle(1, stroke, 0.95);
+    const text = this.add.text(x, y, label, { font: '13px monospace', fill: variant === 'disabled' ? '#777777' : '#f5dfbc' }).setOrigin(0.5);
+    if (variant !== 'disabled') {
+      btn.setInteractive({ useHandCursor: true });
+      btn.on('pointerdown', () => this.tweens.add({ targets: [btn, text], scale: 1.03, duration: 90, yoyo: true }));
+      btn.on('pointerup', onClick);
+    }
+    c.add([btn, text]);
+    return btn;
+  }
+
+  _makeSmallButton(x, y, label, onClick) {
+    const bg = this.add.circle(x, y, 18, 0x2d1a44, 0.95).setStrokeStyle(1, 0xc69d63, 0.9);
+    const text = this.add.text(x, y, label, { font: '14px monospace', fill: '#ffe4b8' }).setOrigin(0.5);
+    const hit = this.add.zone(x, y, 42, 42).setInteractive({ useHandCursor: true });
+    hit.on('pointerup', onClick);
+    return { bg, text, hit };
+  }
 
   _startSceneOrLocked(scene, unlockKey, lockedMsg) {
     if (unlockKey && !GameState.isUnlocked(unlockKey)) {
@@ -340,76 +374,11 @@ export default class MainHubScene extends Phaser.Scene {
     const rules = {
       Arena: { unlockKey: 'ARENA', lockedMsg: 'Unlocks after Region 2' },
       Guild: { unlockKey: 'GUILD', lockedMsg: 'Unlocks after Region 3' },
+      GuildShop: { unlockKey: 'GUILD', lockedMsg: 'Unlocks after Region 3' },
       AffinityTowerSelection: { unlockKey: 'AFFINITY_TOWERS', lockedMsg: 'Unlocks after Region 3' },
       EndlessTower: { unlockKey: 'FULL_ENDLESS_CONTENT', lockedMsg: 'Unlocks after Region 5' }
     };
     return rules[scene] || null;
-  }
-
-  _buildIdleHeroAnimations() {
-    this._heroLayer.removeAll(true);
-    this._heroSprites = [];
-
-    const heroBaseX = W / 2;
-    const heroBaseY = 470;
-    const aura = this.add.circle(heroBaseX, heroBaseY, 44, 0x7d42d6, 0.2);
-    const body = this.add.circle(heroBaseX, heroBaseY, 30, 0x301f4f, 1).setStrokeStyle(2, 0xe0b774, 0.9);
-    const helm = this.add.text(heroBaseX, heroBaseY - 2, '⛨', { font: '20px serif', fill: '#f8dcb1' }).setOrigin(0.5);
-    this._heroLayer.add([aura, body, helm]);
-
-    for (let i = 0; i < 6; i++) {
-      const orb = this.add.circle(
-        heroBaseX + Phaser.Math.Between(-78, 78),
-        heroBaseY - Phaser.Math.Between(30, 110),
-        Phaser.Math.Between(2, 4),
-        0xc28bff,
-        0.7
-      );
-      this._heroLayer.add(orb);
-      this._heroSprites.push(orb);
-      this.tweens.add({
-        targets: orb,
-        y: orb.y - Phaser.Math.Between(18, 52),
-        alpha: 0.15,
-        duration: Phaser.Math.Between(1800, 2600),
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.inOut'
-      });
-    }
-
-    this.tweens.add({ targets: body, scaleY: 1.03, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    this.tweens.add({ targets: helm, y: heroBaseY - 5, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-    this.tweens.add({ targets: aura, scale: 1.08, alpha: 0.14, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-  }
-
-  _makeIconButton({ x, y, label, scene }) {
-    const buttonAsset = addUIButton(this, x, y, 'buttonDanger', {
-      displayWidth: 36,
-      displayHeight: 36,
-      alpha: 0.9
-    });
-    const iconAsset = addIconImage(this, x, y, 'iconSettings', {
-      displayWidth: 16,
-      displayHeight: 16,
-      alpha: 0.95
-    });
-
-    const { root } = createArcaneButton(this, {
-      x,
-      y,
-      width: 36,
-      height: 36,
-      label,
-      font: '16px serif',
-      onClick: () => {
-        const gate = this._getSceneUnlock(scene);
-        this._startSceneOrLocked(scene, gate?.unlockKey, gate?.lockedMsg);
-      }
-    });
-    buttonAsset.setDepth(root.depth - 1);
-    iconAsset.setDepth(root.depth + 1);
-    return root;
   }
 
   _isCodexNotifiable() {
@@ -451,17 +420,10 @@ export default class MainHubScene extends Phaser.Scene {
     this._currencyTexts[CURRENCY.GOLD]?.setText(this._compact(CurrencyManager.get(CURRENCY.GOLD)));
     this._currencyTexts[CURRENCY.PREMIUM_CRYSTALS]?.setText(this._compact(CurrencyManager.get(CURRENCY.PREMIUM_CRYSTALS)));
     this._currencyTexts[CURRENCY.CRYSTALS]?.setText(this._compact(CurrencyManager.get(CURRENCY.CRYSTALS)));
-    this._currencyTexts[CURRENCY.AWAKENING_SHARDS]?.setText(this._compact(CurrencyManager.get(CURRENCY.AWAKENING_SHARDS)));
 
-    if (this._resourceTexts.length >= 3) {
-      this._resourceTexts[0].setText(this._compact(CurrencyManager.get(CURRENCY.GOLD)));
-      this._resourceTexts[1].setText(this._compact(CurrencyManager.get(CURRENCY.PREMIUM_CRYSTALS)));
-      this._resourceTexts[2].setText(this._compact(CurrencyManager.get(CURRENCY.CRYSTALS)));
-    }
-
-    this._levelText.setText(String(GameState.playerLevel || 1));
-    this._usernameText.setText(GameState.playerName || 'Arcanist');
-    this._powerText.setText(`Power ${this._compact(this._getTeamPower())}`);
+    this._levelText?.setText(String(GameState.playerLevel || 1));
+    this._usernameText?.setText(GameState.playerName || 'Risen Ruler');
+    this._powerText?.setText(`Power ${this._compact(this._getTeamPower())}`);
     this._updateNotificationDots();
   }
 
@@ -495,7 +457,7 @@ export default class MainHubScene extends Phaser.Scene {
       fill: ARCANE_THEME.colors.textPrimary,
       backgroundColor: '#160f2acc',
       padding: { x: 10, y: 6 }
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(1000);
 
     this.tweens.add({
       targets: toast,
