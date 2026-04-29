@@ -1,7 +1,14 @@
+import IMAGE_ASSET_MANIFEST from '../data/assetManifest.js';
 import GameState from '../systems/GameState.js';
 
 export default class PreloadScene extends Phaser.Scene {
   constructor() { super('Preload'); }
+
+  preload() {
+    IMAGE_ASSET_MANIFEST.forEach(({ key, path }) => {
+      this.load.image(key, path);
+    });
+  }
 
   create() {
     this.add.text(240, 400, 'ARCANE ACADEMY', { font: '28px monospace', fill: '#ffd700' }).setOrigin(0.5);
