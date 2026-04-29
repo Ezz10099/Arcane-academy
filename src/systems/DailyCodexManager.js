@@ -137,7 +137,7 @@ const DailyCodexManager = {
     this._checkDailyReset();
     if (!this.isAllDailyComplete() || this.dailyChestClaimed) return null;
     this.dailyChestClaimed = true;
-    return { ...DAILY_CHEST };
+    return this.getDailyChestReward();
   },
 
   claimWeeklyChest() {
