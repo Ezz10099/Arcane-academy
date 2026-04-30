@@ -99,7 +99,7 @@ export default class CampaignScene extends Phaser.Scene {
       const globalIdx = this._stageIdx(stage.id);
       const cleared = globalIdx <= lastIdx;
       const unlocked = globalIdx <= lastIdx + 1;
-      const y = CONTENT_TOP + 8 + localIdx * (rowH + rowGap) + (rowH / 2);
+      const y = 8 + localIdx * (rowH + rowGap) + (rowH / 2);
       const bgColor = cleared ? 0x0a260a : 0x111128;
       const alpha = unlocked ? 1 : 0.4;
 
